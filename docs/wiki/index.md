@@ -4,11 +4,12 @@
 - [[overview]] — یک‌نگاه کلی کاتالوگ‌یار و معماری فعلی
 
 ## Entities (5 صفحه)
-- [[entities/catalog-router]] — endpoint `POST /catalog/generate`
+- [[entities/catalog-router]] — endpoint `POST /catalog/generate`، حالا واقعاً pipeline را صدا می‌زند
 - [[entities/catalog-schemas]] — مدل‌های Pydantic ورودی/خروجی کاتالوگ
-- [[entities/vision]] — تحلیل تصویر محصول (اسکلت)
-- [[entities/speech]] — رونویسی ویس فارسی (اسکلت)
-- [[entities/generate]] — تولید خروجی نهایی کاتالوگ از شواهد ادغام‌شده (اسکلت)
+- [[entities/vision]] — تحلیل تصویر محصول با مدل vision واقعی
+- [[entities/speech]] — رونویسی ویس فارسی با مدل speech-to-text واقعی
+- [[entities/generate]] — تولید خروجی نهایی کاتالوگ با مدل زبانی واقعی
 
-## Concepts (1 صفحه)
+## Concepts (2 صفحه)
 - [[concepts/catalog-pipeline]] — فلو کامل ۴مرحله‌ای پردازش (vision → speech → merge → generate)
+- [[concepts/engine-config]] — تنظیمات مدل (`config.py`) و خطاهای مشترک موتور (`errors.py`)

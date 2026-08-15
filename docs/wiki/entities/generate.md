@@ -9,10 +9,14 @@
 ## وابستگی‌ها
 - [[concepts/catalog-pipeline]] — مرحله‌ی چهارم/آخر
 - [[entities/catalog-schemas]] — همین schema `CatalogGenerateResponse` را پر می‌کند
+- [[concepts/engine-config]] — `OPENAI_API_KEY` و `CATALOGYAR_GENERATE_MODEL`
 
 ## قراردادها / Edge cases
-- فعلاً `NotImplementedError` — پشت interface ساده تا به مدل زبانی واقعی (تولید متن ساختاریافته
-  فارسی) وصل شود؛ قدم بعدی پروژه دقیقاً همین اتصال است.
+- پرامپت صریحاً از مدل می‌خواهد فقط از شواهد استنتاج کند و برای فیلدهای غیرقابل‌استخراج
+  (قیمت، موجودی، سایز دقیق) سؤال در `missing_info_questions` بگذارد، نه حدس بزند.
+- اگر `category_list` داده شده، از مدل خواسته می‌شود `suggested` را دقیقاً از همان لیست انتخاب کند
+  (ولی این قید سمت prompt است، نه اعتبارسنجی سخت در کد — ریسک شناخته‌شده، در roadmap).
+- خروجی JSON parse و به مدل‌های Pydantic (`Attribute`, `Variant`, `Category`, `SourceEvidence`) map می‌شود.
 
 ## منابع کد
 - `backend/app/pipeline/generate.py:20` — `generate_catalog`

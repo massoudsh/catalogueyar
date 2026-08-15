@@ -8,10 +8,13 @@
 
 ## وابستگی‌ها
 - [[concepts/catalog-pipeline]] — اولین مرحله؛ `ImageAnalysis` ورودی مرحله‌ی merge است
+- [[concepts/engine-config]] — `OPENAI_API_KEY` و `CATALOGYAR_VISION_MODEL`
 
 ## قراردادها / Edge cases
-- فعلاً `NotImplementedError` — پشت یک interface ساده تا در فاز پیاده‌سازی به مدل چندوجهی
-  واقعی (vision model) وصل شود. این تصمیم عمدی معماری MVP است، نه باگ.
+- عکس‌ها به data URL (base64) تبدیل و در یک پیام چندبخشی به مدل vision فرستاده می‌شوند.
+- خروجی مدل باید JSON خالص باشد (`response_format=json_object`)؛ در صورت JSON نامعتبر یا خطای
+  شبکه، `EngineCallError` می‌دهد.
+- بدون `OPENAI_API_KEY` بلافاصله `EngineNotConfiguredError` می‌دهد (بدون فراخوانی شبکه).
 
 ## منابع کد
 - `backend/app/pipeline/vision.py:18` — `analyze_images`
