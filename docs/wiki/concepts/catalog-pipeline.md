@@ -19,6 +19,10 @@ pipeline اجرا، و در `finally` فایل‌های موقت پاک می‌�
 هر مرحله پشت یک interface ساده (تابع خالص با ورودی/خروجی مشخص) قرار دارد تا اتصال به مدل
 چندوجهی/گفتار فارسی واقعی در فاز پیاده‌سازی، بدون تغییر ساختار API انجام شود.
 
+## آزمون‌پذیری
+`backend/tests/test_pipeline.py` با mock کردن OpenAI، قرارداد ساختاریافته‌ی vision/speech/generate، ادغام شواهد و دو مسیر خطا (کلید مفقود و JSON نامعتبر) را بدون API یا اعتبارنامهٔ واقعی می‌سنجد.
+
 ## منابع کد
-- `backend/app/pipeline/merge.py` — تنها پیاده‌سازی کامل فعلی
+- `backend/app/pipeline/merge.py:18` — ادغام شواهد
+- `backend/tests/test_pipeline.py` — تست‌های واحد pipeline با mock مدل
 - `docs/mvp-design.md` — طراحی اصلی pipeline ۷ مرحله‌ای (نسخه‌ی کامل‌تر آینده)
