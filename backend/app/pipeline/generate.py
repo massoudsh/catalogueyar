@@ -11,6 +11,7 @@ from openai import OpenAI, OpenAIError
 from app.config import GENERATE_MODEL, OPENAI_API_KEY
 from app.pipeline.errors import EngineCallError, EngineNotConfiguredError
 from app.pipeline.merge import MergedEvidence
+from app.pipeline.retry import call_with_retry
 from app.schemas.catalog import (
     Attribute,
     CatalogGenerateResponse,
@@ -58,7 +59,8 @@ def generate_catalog(
     """از شواهد ادغام‌شده یک پیش‌نویس کامل کاتالوگ می‌سازد.
 
     نیازمند متغیر محیطی ``OPENAI_API_KEY``. نام مدل با ``CATALOGYAR_GENERATE_MODEL``
-    قابل تغییر است (پیش‌فرض: ``gpt-4o-mini``).
+    قابل تغییر است (پیش‌فرض: ``gpt-4o-mini``). فراخوانی مدل با retry/backoff
+    (فقط روی خطای موقت شبکه/``429``/``5xx``) انجام می‌شود.
     """
     if not OPENAI_API_KEY:
         raise EngineNotConfiguredError(
@@ -66,7 +68,8 @@ def generate_catalog(
         )
 
     client = OpenAI(api_key=OPENAI_API_KEY)
-    try:
+
+    def _call_model() -> str:
         response = client.chat.completions.create(
             model=GENERATE_MODEL,
             response_format={"type": "json_object"},
@@ -75,7 +78,10 @@ def generate_catalog(
                 {"role": "user", "content": _evidence_to_prompt(evidence, category_list)},
             ],
         )
-        raw = response.choices[0].message.content or "{}"
+        return response.choices[0].message.content or "{}"
+
+    try:
+        raw = call_with_retry(_call_model, operation="generate")
         data = json.loads(raw)
     except (OpenAIError, json.JSONDecodeError) as exc:
         raise EngineCallError(f"خطا در تولید کاتالوگ: {exc}") from exc
