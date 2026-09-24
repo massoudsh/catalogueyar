@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>کاتالوگ‌یار | ساخت کاتالوگ با عکس و ویس</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero card">
+      <div class="hero__copy">
+        <p class="eyebrow">دستیار فروشنده‌های ایرانی</p>
+        <h1>از عکس، ویس و توضیح کوتاه؛ کاتالوگ آماده فروش بساز.</h1>
+        <p class="lead">کاتالوگ‌یار اطلاعات محصول را از رسانه‌ها استخراج می‌کند، متن فارسی فروشگاهی می‌نویسد و سؤال‌های ناقص را قبل از انتشار نشان می‌دهد.</p>
+        <div class="hero__actions">
+          <a class="button button--primary" href="#generator">شروع ساخت کاتالوگ</a>
+          <a class="button button--ghost" href="#preview">دیدن نمونه خروجی</a>
+        </div>
+      </div>
+      <aside class="hero__panel" aria-label="خلاصه وضعیت">
+        <div class="stat">
+          <span>ورودی تصویری</span>
+          <strong>۱ تا ۵</strong>
+          <small>عکس محصول</small>
+        </div>
+        <div class="stat">
+          <span>پشتیبانی</span>
+          <strong>فارسی</strong>
+          <small>ویس و متن فروشنده</small>
+        </div>
+        <div class="stat stat--wide">
+          <span>خروجی</span>
+          <strong>عنوان، دسته، ویژگی و توضیح</strong>
+        </div>
+      </aside>
+    </section>
+
+    <section class="grid" id="generator">
+      <form class="card form-card" id="catalog-form">
+        <div class="section-heading">
+          <p class="eyebrow">ساخت draft</p>
+          <h2>رسانه محصول را بارگذاری کن</h2>
+          <p>عکس‌ها ضروری‌اند؛ ویس، توضیح فروشنده و دسته‌های مجاز اختیاری هستند.</p>
+        </div>
+
+        <label class="upload-zone" for="images">
+          <input id="images" name="images" type="file" accept="image/*" multiple required>
+          <span class="upload-zone__icon">+</span>
+          <strong>عکس‌های محصول را انتخاب کن</strong>
+          <small>حداقل ۱ و حداکثر ۵ تصویر</small>
+          <span id="image-summary">هنوز فایلی انتخاب نشده</span>
+        </label>
+
+        <label class="field">
+          <span>ویس فارسی اختیاری</span>
+          <input id="voice_note" name="voice_note" type="file" accept="audio/*">
+        </label>
+
+        <label class="field">
+          <span>توضیح فروشنده</span>
+          <textarea id="seller_hint" name="seller_hint" rows="4" placeholder="مثلاً: کیف چرمی زنانه، مناسب استفاده روزمره، بند قابل تنظیم"></textarea>
+        </label>
+
+        <label class="field">
+          <span>دسته‌های مجاز فروشگاه</span>
+          <input id="categories" name="categories" type="text" placeholder="کیف، اکسسوری، پوشاک">
+          <small>با ویرگول جدا کن.</small>
+        </label>
+
+        <button class="button button--primary button--full" type="submit">تولید کاتالوگ</button>
+        <p class="notice" id="status" role="status">آماده دریافت اطلاعات محصول.</p>
+      </form>
+
+      <section class="card result-card" id="preview" aria-live="polite">
+        <div class="section-heading">
+          <p class="eyebrow">پیش‌نمایش خروجی</p>
+          <h2 id="result-title">کاتالوگ هنوز ساخته نشده</h2>
+          <p id="result-description">بعد از ارسال فرم، عنوان، دسته پیشنهادی، توضیح و ویژگی‌ها اینجا نمایش داده می‌شود.</p>
+        </div>
+
+        <div class="result-meta">
+          <div>
+            <span>دسته پیشنهادی</span>
+            <strong id="result-category">—</strong>
+          </div>
+          <div>
+            <span>اعتماد</span>
+            <strong id="result-confidence">—</strong>
+          </div>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="بخش‌های خروجی">
+          <button class="tab is-active" type="button" data-tab="attributes">ویژگی‌ها</button>
+          <button class="tab" type="button" data-tab="variants">تنوع‌ها</button>
+          <button class="tab" type="button" data-tab="questions">سؤال‌های ناقص</button>
+        </div>
+
+        <div class="tab-panel" id="attributes"></div>
+        <div class="tab-panel is-hidden" id="variants"></div>
+        <div class="tab-panel is-hidden" id="questions"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
