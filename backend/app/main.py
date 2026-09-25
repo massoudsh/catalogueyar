@@ -16,7 +16,7 @@ app = FastAPI(
 )
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-app.include_router(catalog_router)
+app.router.routes.extend(catalog_router.routes)
 
 
 @app.get("/")

@@ -12,9 +12,11 @@ docs/
 backend/
   app/
     main.py            # FastAPI entrypoint
-    api/catalog.py      # POST /catalog/generate
-    pipeline/            # مراحل پردازش: vision, speech, merge, generate
+    api/catalog.py      # endpointهای generate/history/edit/export/publish
+    pipeline/            # مراحل پردازش: retry, cache, video, vision, speech, merge, generate
     schemas/catalog.py   # مدل‌های ورودی/خروجی
+    storage.py           # ذخیره‌سازی SQLite draft و feedback
+    auth.py              # Bearer API key و rate limit
 ```
 
 ## ویکی دانش پروژه
@@ -26,9 +28,9 @@ backend/
 
 ## وضعیت فعلی
 
-اسکلت اولیه‌ی API آماده است؛ endpoint اصلی (`POST /catalog/generate`) ساختار درخواست/پاسخ را دارد اما اتصال واقعی به مدل‌های تحلیل تصویر/گفتار هنوز پیاده‌سازی نشده (`NotImplementedError` / پاسخ `501`).
+اپ FastAPI آماده است و رابط RTL روی `/` سرو می‌شود. endpoint اصلی `POST /catalog/generate` عکس یا ویدئو، ویس اختیاری، توضیح فروشنده و دسته‌های مجاز را می‌گیرد و draft ساختاریافتهٔ فارسی/انگلیسی می‌سازد. draftها در SQLite ذخیره می‌شوند و endpointهای تاریخچه، جزئیات، ویرایش، export و publish برای بازارگاه‌ها در دسترس‌اند.
 
-## اجرای محلی (بعد از پیاده‌سازی pipeline)
+## اجرای محلی
 
 ```bash
 cd backend

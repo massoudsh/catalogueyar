@@ -60,7 +60,7 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   if (imageInput.files.length < 1 || imageInput.files.length > 5) {
-    setStatus("باید بین ۱ تا ۵ عکس انتخاب کنی.", "is-error");
+    setStatus("باید بین ۱ تا ۵ عکس یا ویدئو انتخاب کنی.", "is-error");
     return;
   }
 
