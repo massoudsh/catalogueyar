@@ -4,13 +4,14 @@
 این فایل فقط تنظیمات مخصوص «کاتالوگ‌یار» را نگه می‌دارد.
 
 ## گروه‌بندی entity ها در این پروژه
-- **api** — routerهای FastAPI (مثل `entities/catalog-router.md`)
-- **schema** — مدل‌های Pydantic ورودی/خروجی
-- **pipeline** — مراحل پردازش (vision, speech, merge, generate)
+- **api** — routerهای FastAPI (`entities/catalog-router.md`)
+- **schema** — مدل‌های Pydantic (`entities/catalog-schemas.md`)
+- **pipeline** — مراحل پردازش (video, vision, speech, merge, generate + retry/cache)
+- **platform** — auth، storage، marketplaces
 
 ## قرارداد نام‌گذاری فایل
-`{نام-کوتاه-کباب-کیس}.md` — مثال: `catalog-router.md`, `vision-analysis.md`.
+`{نام-کوتاه-کباب-کیس}.md` — مثال: `catalog-router.md`, `engine-config.md`.
 
 ## وضعیت فعلی پروژه (برای زمینه‌ی lint)
-فاز MVP اسکلت‌سازی — بیشتر ماژول‌های pipeline عمداً `NotImplementedError`/`501` برمی‌گردانند
-تا اتصال واقعی به مدل‌های چندوجهی/گفتار فارسی در فاز بعد انجام شود. این تناقض نیست، طراحی عمدی است.
+موتور واقعی وصل است (دیگر اسکلت/۵۰۱ نیست). ویکی باید endpointهای history/edit/export/publish،
+ویدئو، auth، SQLite و فیلد `english` را پوشش دهد. نقطهٔ شروع: [[overview]] و [[index]].

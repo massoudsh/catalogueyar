@@ -1,29 +1,39 @@
-# موتور هوش مصنوعی — طراحی و نقشه‌ی راه فیچرها
+# موتور هوش مصنوعی — طراحی و وضعیت فیچرها
 
 ## وضعیت فعلی (پیاده‌سازی‌شده)
 
-`POST /catalog/generate` حالا واقعاً موتور را صدا می‌زند (دیگر اسکلت/`501` نیست):
+`POST /catalog/generate` موتور کامل را صدا می‌زند و draft را ذخیره می‌کند:
 
 ```
-عکس‌ها + ویس اختیاری
+عکس / ویدئو (+ ویس اختیاری)
     │
     ▼
-vision.analyze_images()      → مدل vision (پیش‌فرض gpt-4o-mini) روی عکس‌ها
+video.extract_video_frames()  → ffmpeg (فقط فایل ویدئو) → فریم JPG
     │
     ▼
-speech.transcribe_voice()    → مدل speech-to-text (پیش‌فرض whisper-1) اگر ویس بود
+vision.analyze_images()       → مدل vision (+ cache دیسکی)
     │
     ▼
-merge.merge_evidence()       → ادغام شواهد (بدون فراخوانی مدل، map ساده)
+speech.transcribe_voice()     → whisper اگر ویس بود
     │
     ▼
-generate.generate_catalog()  → مدل زبانی (پیش‌فرض gpt-4o-mini) برای تولید JSON نهایی
+merge.merge_evidence()        → بدون مدل
+    │
+    ▼
+generate.generate_catalog()   → JSON نهایی (+ english + تاریخچه فروشنده)
+    │
+    ▼
+storage.create_draft()        → SQLite
 ```
 
 - تنظیمات در `backend/app/config.py` — از env vars خوانده می‌شود (`OPENAI_API_KEY` و ۳ نام مدل قابل override).
 - بدون `OPENAI_API_KEY` هر سه مرحله‌ی مدل‌محور خطای `503` با پیام روشن برمی‌گردانند (`EngineNotConfiguredError`).
-- خطای فراخوانی مدل (شبکه/format) → `502` (`EngineCallError`).
-- فایل‌های آپلودی در `tempfile` موقت ذخیره و در `finally` پاک می‌شوند.
+- خطای فراخوانی مدل / ffmpeg / publish → `502` (`EngineCallError`).
+- فایل‌های آپلودی و فریم‌ها در `tempfile` موقت ذخیره و در `finally` پاک می‌شوند.
+- **Auth + rate limit**: `auth.py` با `CATALOGYAR_API_KEYS` / `CATALOGYAR_RATE_LIMIT_PER_MINUTE`.
+- **تاریخچه / ویرایش / feedback**: `storage.py` + endpointهای history/detail/PATCH.
+- **مارکت‌پلیس**: `marketplaces.py` — export و publish برای digikala/basalam/torob.
+- مرجع HTTP: `docs/api.md`. ویکی زنده: `docs/wiki/`.
 - **Retry/backoff** (issue #1، پیاده‌سازی‌شده): هر سه فراخوانی مدل از `pipeline/retry.py`
   (`call_with_retry`) رد می‌شوند — فقط خطای موقت (قطعی شبکه/تایم‌اوت/`429`/`5xx`) با backoff نمایی
   و jitter دوباره تلاش می‌شود؛ خطای `4xx` کلاینت (مثل `400`/`401`/`403`) بدون retry بالا می‌رود.
@@ -38,23 +48,28 @@ generate.generate_catalog()  → مدل زبانی (پیش‌فرض gpt-4o-mini)
 
 ## چرا OpenAI-compatible API
 
-- پرکاربردترین و مستندترین SDK برای هر دو نوع مدل موردنیاز (vision + speech-to-text) با یک کلید.
-- Interface هر ماژول (`analyze_images`, `transcribe_voice`, `generate_catalog`) مستقل از provider است — عوض کردن به مدل دیگر (مثلاً یک مدل فارسی اختصاصی‌تر برای گفتار) فقط نیازمند بازنویسی داخل همان تابع است، نه تغییر در API یا schema.
+- یک SDK برای vision + speech-to-text + chat با یک کلید.
+- Interface هر ماژول مستقل از provider است؛ عوض کردن مدل زیرین نیازی به تغییر schema عمومی ندارد.
 
-## نقشه‌ی راه فیچرها (بعد از این قدم)
+## نقشه‌ی راه فیچرها
 
 ### موتور
-1. ~~**Retry/backoff** برای فراخوانی مدل (خطای موقت شبکه نباید کل درخواست را fail کند).~~ — ✅ انجام شد (issue #1).
-2. ~~**Cache تحلیل تصویر** بر اساس hash عکس (فروشنده‌ها اغلب عکس یکسان را دوباره آپلود می‌کنند).~~ — ✅ انجام شد (issue #2).
-3. **پردازش ویدئو** (فریم‌گیری خودکار به‌جای چند عکس جدا) — در MVP خارج از scope بود.
-4. **تشخیص واریانت رنگی از ست عکس** (یک محصول با چند رنگ در یک آپلود).
-5. **مدل گفتار فارسی اختصاصی‌تر** اگر کیفیت whisper برای لهجه‌های محلی کافی نبود.
+1. ~~Retry/backoff~~ — ✅
+2. ~~Cache تحلیل تصویر~~ — ✅ (دیسک، TTL، enable-flag، `cache.stats()`)
+3. ~~پردازش ویدئو (فریم‌گیری)~~ — ✅ (`pipeline/video.py` + ffmpeg)
+4. ~~تشخیص چند رنگ / variant از ست عکس~~ — ✅ (پرامپت vision+generate)
+5. **مدل گفتار فارسی اختصاصی‌تر** اگر whisper برای لهجه‌های محلی کافی نبود.
 
 ### محصول
-6. **ویرایش تعاملی خروجی** — فروشنده روی هر فیلد کم‌اطمینان (`confidence` پایین) تپ کند و اصلاح کند؛ فیدبک برای بهبود پرامپت.
-7. **یادگیری از تاریخچه‌ی فروشنده** — سبک نوشتار/دسته‌بندی‌های پرتکرار یک فروشنده را به‌خاطر بسپارد (فاز بعدی، خارج از MVP).
-8. **خروجی مستقیم به مارکت‌پلیس** — اتصال API به دیجی‌کالا/باسلام/ترب برای انتشار مستقیم به‌جای فقط JSON داخلی.
-9. **چندزبانه بودن خروجی** (فارسی + انگلیسی) برای فروشنده‌های صادراتی.
-10. **Auth و rate limiting** روی endpoint قبل از استفاده‌ی عمومی (فعلاً بدون احراز هویت است).
+6. ~~ویرایش خروجی + ثبت feedback~~ — ✅ (`PATCH /catalog/{id}` + جدول feedback)
+7. ~~یادگیری سبک از تاریخچه فروشنده~~ — ✅ سبک (`seller_context` در پرامپت generate)
+8. ~~خروجی/انتشار مارکت‌پلیس~~ — ✅ export + publish با URL از env (اتصال واقعی وابسته به credential)
+9. ~~خروجی دو زبانه (FA + EN)~~ — ✅ فیلد `english`
+10. ~~Auth و rate limiting~~ — ✅ Bearer API key
 
-این لیست مبنای issueهای گیت‌هاب است (بخش «قدم بعدی» را ببینید).
+### باقی‌مانده / سخت‌تر
+- UI تعاملی غنی‌تر روی فیلدهای low-confidence (الان RTL پایه روی `/` هست).
+- اعتبارسنجی سخت `category.suggested ∈ store_category_list` سمت سرور.
+- حلقهٔ یادگیری واقعی از جدول feedback (فعلاً فقط ذخیره می‌شود).
+- یکپارچگی عمیق‌تر با API رسمی هر مارکت‌پلیس (الان POST عمومی با payload داخلی است).
+- observability چند-process برای cache (الان شمارنده‌ها per-worker هستند).

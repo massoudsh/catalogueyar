@@ -1,7 +1,6 @@
 # Engine Config
 
-> تنظیمات مشترک موتور هوش مصنوعی (کلید API، نام مدل‌ها، retry/backoff، cache) و خطاهای مشترک بین
-> سه مرحله‌ی مدل‌محور pipeline ([[entities/vision]], [[entities/speech]], [[entities/generate]]).
+> تنظیمات env، خطاهای مشترک موتور، retry و cache تصویر.
 
 ## `backend/app/config.py`
 همه از env var خوانده می‌شود، هیچ کلیدی در کد نیست:
@@ -64,8 +63,5 @@
 ## منابع کد
 - `backend/app/config.py`
 - `backend/app/pipeline/errors.py`
-- `backend/app/pipeline/retry.py:64` — `call_with_retry`
-- `backend/app/pipeline/retry.py:32` — `is_transient` (تفکیک خطای موقت از خطای کلاینت)
-- `backend/app/pipeline/cache.py:52` — `build_key`
-- `backend/app/pipeline/cache.py:68` — `get`
-- `backend/app/pipeline/cache.py:103` — `put`
+- `backend/app/pipeline/retry.py`
+- `backend/app/pipeline/cache.py`

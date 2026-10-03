@@ -1,28 +1,33 @@
 # Catalog Pipeline
 
-> فلوی پردازش چندمرحله‌ای که از عکس/ویس فروشنده به خروجی ساختاریافته‌ی کاتالوگ می‌رسد.
+> فلو از اولین آپلود مدیا تا draft ذخیره‌شدهٔ کاتالوگ.
 
-## مراحل (۴ تابع، ۳ تا از آن‌ها الان یک مدل واقعی صدا می‌زنند)
-1. **vision** — [[entities/vision]] `analyze_images(image_paths) -> ImageAnalysis` (مدل vision واقعی)
-2. **speech** (اختیاری) — [[entities/speech]] `transcribe_voice(audio_path) -> str` (مدل speech-to-text واقعی)
-3. **merge** — `backend/app/pipeline/merge.py:18` `merge_evidence(image_analysis, voice_transcript, seller_hint) -> MergedEvidence`
-   شواهد سه‌منبعی (تصویر + صدا + راهنمای متنی فروشنده) را در یک ساختار واحد جمع می‌کند. تنها
-   مرحله‌ای که بدون فراخوانی مدل خارجی کار می‌کند (صرفاً map کردن فیلدها).
-4. **generate** — [[entities/generate]] `generate_catalog(evidence, category_list) -> CatalogGenerateResponse` (مدل زبانی واقعی)
+## مراحل
+1. **auth** — [[entities/auth]] تعیین `seller_id` و اعمال rate limit.
+2. **video (اختیاری per-file)** — [[entities/video]] اگر پسوند ویدئو باشد → تا ۵ فریم JPG.
+3. **vision** — [[entities/vision]] `analyze_images(image_paths) -> ImageAnalysis` (+ cache).
+4. **speech (اختیاری)** — [[entities/speech]] `transcribe_voice` اگر ویس آمده باشد.
+5. **merge** — `merge_evidence(image_analysis, voice_transcript, seller_hint) -> MergedEvidence`
+   در `backend/app/pipeline/merge.py`؛ بدون فراخوانی مدل.
+6. **generate** — [[entities/generate]] با `seller_context(seller_id)` به‌عنوان history.
+7. **store** — [[entities/storage]] `create_draft`؛ پاسخ همان `CatalogGenerateResponse` است
+   (metadata draft از history/detail خوانده می‌شود).
 
 ## اتصال به API
-[[entities/catalog-router]] این ۴ مرحله را پشت‌سرهم صدا می‌زند: فایل‌های آپلودی موقت ذخیره،
-pipeline اجرا، و در `finally` فایل‌های موقت پاک می‌شوند. خطاهای موتور (کلید نبود/فراخوانی fail شد)
-در [[concepts/engine-config]] به کد HTTP مناسب (`503`/`502`) map می‌شوند.
+[[entities/catalog-router]] این مراحل را برای `POST /catalog/generate` پشت‌سرهم اجرا می‌کند و
+فایل‌های موقت/فریم‌ها را در `finally` پاک می‌کند. مسیرهای بعدی (history/edit/export/publish)
+روی draft ذخیره‌شده کار می‌کنند، نه دوباره روی pipeline کامل.
 
-## چرا این ساختار
-هر مرحله پشت یک interface ساده (تابع خالص با ورودی/خروجی مشخص) قرار دارد تا اتصال به مدل
-چندوجهی/گفتار فارسی واقعی در فاز پیاده‌سازی، بدون تغییر ساختار API انجام شود.
+## خطاها
+نگاه کنید به [[concepts/engine-config]]: کلید مفقود → `503`؛ مدل/ffmpeg/publish → `502`؛
+ورودی نامعتبر → `400`؛ draft گم → `404`؛ rate limit → `429`.
 
 ## آزمون‌پذیری
-`backend/tests/test_pipeline.py` با mock کردن OpenAI، قرارداد ساختاریافته‌ی vision/speech/generate، ادغام شواهد و دو مسیر خطا (کلید مفقود و JSON نامعتبر) را بدون API یا اعتبارنامهٔ واقعی می‌سنجد.
+`backend/tests/test_pipeline.py` با mock OpenAI قرارداد vision/speech/generate، ادغام شواهد،
+storage و مسیرهای خطا را می‌سنجد.
 
 ## منابع کد
-- `backend/app/pipeline/merge.py:18` — ادغام شواهد
-- `backend/tests/test_pipeline.py` — تست‌های واحد pipeline با mock مدل
-- `docs/mvp-design.md` — طراحی اصلی pipeline ۷ مرحله‌ای (نسخه‌ی کامل‌تر آینده)
+- `backend/app/api/catalog.py` — orchestration
+- `backend/app/pipeline/merge.py` — ادغام شواهد
+- `docs/mvp-design.md` — طراحی اولیهٔ ۷مرحله‌ای محصول
+- `docs/api.md` — مرجع HTTP
