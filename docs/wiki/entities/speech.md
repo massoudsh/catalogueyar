@@ -8,7 +8,7 @@
 ## وابستگی‌ها
 - [[concepts/catalog-pipeline]] — خروجی وارد `merge.merge_evidence`
 - [[concepts/engine-config]] — `OPENAI_API_KEY`, `CATALOGYAR_SPEECH_MODEL` (پیش‌فرض `whisper-1`)
-- `backend/app/pipeline/retry.py` — `with_retry` دور `audio.transcriptions.create`
+- `backend/app/pipeline/retry.py` — `call_with_retry` دور `audio.transcriptions.create`
 
 ## قراردادها / Edge cases
 - `language="fa"` صریح پاس داده می‌شود.

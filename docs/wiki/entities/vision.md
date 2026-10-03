@@ -9,21 +9,23 @@
 
 ## وابستگی‌ها
 - [[concepts/catalog-pipeline]] — بعد از [[entities/video]]؛ خروجی وارد merge می‌شود
-- [[concepts/engine-config]] — `OPENAI_API_KEY`, `CATALOGYAR_VISION_MODEL`, cache dir, retry
-- `backend/app/pipeline/retry.py` — `with_retry` دور فراخوانی مدل
-- `backend/app/pipeline/cache.py` — `cache_key` / `read_cache` / `write_cache`
+- [[concepts/engine-config]] — `OPENAI_API_KEY`, `CATALOGYAR_VISION_MODEL`, cache dir/TTL/enable, retry
+- `backend/app/pipeline/retry.py` — `call_with_retry` دور `chat.completions.create`
+- `backend/app/pipeline/cache.py` — `build_key` / `get` / `put` / `invalidate`
 
 ## قراردادها / Edge cases
-- کلید cache = SHA-256 از digestهای SHA-256 محتوای فایل‌ها با **مسیرهای sorted**؛ ترتیب آپلود در
-  کلید اثر ندارد. نام مدل در کلید نیست.
-- hit → بدون فراخوانی مدل، `_parse_analysis` روی JSON دیسک.
-- miss موفق → `write_cache` اتمیک (`.tmp` + `os.replace`) زیر `CATALOGYAR_VISION_CACHE_DIR`.
-- TTL/enable-flag جداگانه ندارد؛ پاک‌سازی دستی یا عوض کردن dir.
+- هر فایل یک‌بار خوانده می‌شود (هم برای hash محتوا، هم برای data URL).
+- کلید cache = SHA-256 از digest محتوای عکس‌ها + نام مدل + `_ANALYSIS_CACHE_VERSION`؛
+  ترتیب آپلود در کلید اثر دارد؛ نام/مسیر فایل نه.
+- hit → بدون فراخوانی مدل؛ اگر payload با schema فعلی نخواند → `invalidate` + miss.
+- miss موفق → `put` اتمیک (temp + `os.replace`) زیر
+  `CATALOGYAR_IMAGE_CACHE_DIR` / `CATALOGYAR_VISION_CACHE_DIR`.
+- TTL پیش‌فرض ۷ روز (`CATALOGYAR_IMAGE_CACHE_TTL_SECONDS`)؛
+  `CATALOGYAR_IMAGE_CACHE_ENABLED=0` cache را خاموش می‌کند.
 - خروجی باید JSON باشد؛ JSON نامعتبر یا خطای OpenAI → `EngineCallError`.
-- خطای موقت (`APIConnectionError` / `APITimeoutError` / `RateLimitError` / timeout سیستمی) تا
-  ۳ بار با backoff نمایی (`with_retry`) تکرار می‌شود.
+- خطای موقت فقط از طریق `call_with_retry` (شبکه / `429` / `5xx` / `408`) تکرار می‌شود.
 - بدون `OPENAI_API_KEY` → `EngineNotConfiguredError` قبل از مدل.
 
 ## منابع کد
-- `backend/app/pipeline/vision.py` — `analyze_images`, `ImageAnalysis`
-- `backend/app/pipeline/cache.py` — cache دیسکی
+- `backend/app/pipeline/vision.py` — `analyze_images`, `ImageAnalysis`, `_ANALYSIS_CACHE_VERSION`
+- `backend/app/pipeline/cache.py` — cache دیسکی با TTL

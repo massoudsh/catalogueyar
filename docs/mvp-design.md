@@ -65,20 +65,18 @@
 ```
 backend/
   app/
-    main.py                  # FastAPI entrypoint
-    api/
-      catalog.py              # POST /catalog/generate
+    main.py                  # FastAPI + UI استاتیک /
+    config.py                 # env: مدل‌ها، DB، auth، cache، مارکت‌پلیس
+    auth.py / storage.py / marketplaces.py
+    api/catalog.py            # generate / history / edit / export / publish
     pipeline/
-      vision.py               # تحلیل تصویر محصول
-      speech.py                # رونویسی ویس فارسی
-      merge.py                 # ادغام شواهد چندمنبعی
-      generate.py              # تولید عنوان/توضیح/ویژگی از شواهد ادغام‌شده
-    schemas/
-      catalog.py               # مدل‌های Pydantic ورودی/خروجی
+      video.py / vision.py / speech.py / merge.py / generate.py
+      retry.py / cache.py / errors.py
+    schemas/catalog.py         # ورودی/خروجی + Draft/Update
 ```
 
-- هر مرحله‌ی pipeline (vision / speech / merge / generate) پشت یک interface ساده قرار می‌گیرد تا بعداً بدون تغییر API بتوان مدل زیرین را عوض کرد.
-- در نسخه‌ی اول، `vision.py` و `speech.py` می‌توانند به یک مدل چندوجهی (multimodal) بیرونی متصل شوند؛ جزئیات ارائه‌دهنده در فاز پیاده‌سازی مشخص می‌شود.
+- هر مرحله‌ی pipeline پشت interface ساده است تا بتوان مدل زیرین را عوض کرد.
+- جزئیات وضعیت فیچر و قرارداد HTTP: `docs/engine-design.md` و `docs/api.md`.
 
 ## وضعیت نسبت به کد فعلی
 بسیاری از موارد «خارج از MVP» اولیه اکنون پیاده شده‌اند؛ منبع حقیقت وضعیت فیچر:

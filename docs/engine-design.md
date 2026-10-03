@@ -28,8 +28,12 @@ storage.create_draft()        → SQLite
 
 - تنظیمات در `backend/app/config.py` — از env vars خوانده می‌شود (`OPENAI_API_KEY` و ۳ نام مدل قابل override).
 - بدون `OPENAI_API_KEY` هر سه مرحله‌ی مدل‌محور خطای `503` با پیام روشن برمی‌گردانند (`EngineNotConfiguredError`).
-- خطای فراخوانی مدل (شبکه/format) → `502` (`EngineCallError`).
-- فایل‌های آپلودی در `tempfile` موقت ذخیره و در `finally` پاک می‌شوند.
+- خطای فراخوانی مدل / ffmpeg / publish → `502` (`EngineCallError`).
+- فایل‌های آپلودی و فریم‌ها در `tempfile` موقت ذخیره و در `finally` پاک می‌شوند.
+- **Auth + rate limit**: `auth.py` با `CATALOGYAR_API_KEYS` / `CATALOGYAR_RATE_LIMIT_PER_MINUTE`.
+- **تاریخچه / ویرایش / feedback**: `storage.py` + endpointهای history/detail/PATCH.
+- **مارکت‌پلیس**: `marketplaces.py` — export و publish برای digikala/basalam/torob.
+- مرجع HTTP: `docs/api.md`. ویکی زنده: `docs/wiki/`.
 - **Retry/backoff** (issue #1، پیاده‌سازی‌شده): هر سه فراخوانی مدل از `pipeline/retry.py`
   (`call_with_retry`) رد می‌شوند — فقط خطای موقت (قطعی شبکه/تایم‌اوت/`429`/`5xx`) با backoff نمایی
   و jitter دوباره تلاش می‌شود؛ خطای `4xx` کلاینت (مثل `400`/`401`/`403`) بدون retry بالا می‌رود.
@@ -51,7 +55,7 @@ storage.create_draft()        → SQLite
 
 ### موتور
 1. ~~Retry/backoff~~ — ✅
-2. ~~Cache تحلیل تصویر~~ — ✅ (نسخهٔ سادهٔ دیسکی؛ بدون TTL جدا)
+2. ~~Cache تحلیل تصویر~~ — ✅ (دیسک، TTL، enable-flag، `cache.stats()`)
 3. ~~پردازش ویدئو (فریم‌گیری)~~ — ✅ (`pipeline/video.py` + ffmpeg)
 4. ~~تشخیص چند رنگ / variant از ست عکس~~ — ✅ (پرامپت vision+generate)
 5. **مدل گفتار فارسی اختصاصی‌تر** اگر whisper برای لهجه‌های محلی کافی نبود.
@@ -66,6 +70,6 @@ storage.create_draft()        → SQLite
 ### باقی‌مانده / سخت‌تر
 - UI تعاملی غنی‌تر روی فیلدهای low-confidence (الان RTL پایه روی `/` هست).
 - اعتبارسنجی سخت `category.suggested ∈ store_category_list` سمت سرور.
-- TTL/observability پیشرفته‌تر برای cache تصویر.
 - حلقهٔ یادگیری واقعی از جدول feedback (فعلاً فقط ذخیره می‌شود).
 - یکپارچگی عمیق‌تر با API رسمی هر مارکت‌پلیس (الان POST عمومی با payload داخلی است).
+- observability چند-process برای cache (الان شمارنده‌ها per-worker هستند).

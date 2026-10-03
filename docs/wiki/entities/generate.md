@@ -11,7 +11,7 @@
 - [[entities/catalog-schemas]] — `CatalogGenerateResponse` / `EnglishCatalog`
 - [[entities/storage]] — `seller_context` به‌عنوان `history` برای لحن/دسته
 - [[concepts/engine-config]] — `OPENAI_API_KEY`, `CATALOGYAR_GENERATE_MODEL`
-- `backend/app/pipeline/retry.py` — `with_retry`
+- `backend/app/pipeline/retry.py` — `call_with_retry`
 
 ## قراردادها / Edge cases
 - پرامپت: فقط از شواهد؛ چند رنگ → `variants` با type رنگ؛ نسخهٔ انگلیسی در `english`.

@@ -50,3 +50,17 @@ uvicorn app.main:app --reload
 ```
 
 OpenAPI تعاملی: `http://127.0.0.1:8000/docs`
+
+## متغیرهای محیطی (خلاصه)
+
+| متغیر | نقش |
+|---|---|
+| `OPENAI_API_KEY` | الزامی برای vision/speech/generate؛ بدون آن `503` |
+| `CATALOGYAR_*_MODEL` | override نام مدل‌ها (vision / speech / generate) |
+| `CATALOGYAR_DATA_DIR` / `CATALOGYAR_DATABASE_PATH` | مسیر داده و SQLite |
+| `CATALOGYAR_IMAGE_CACHE_*` / `CATALOGYAR_VISION_CACHE_DIR` | cache تحلیل تصویر (enable، dir، TTL) |
+| `CATALOGYAR_MODEL_MAX_ATTEMPTS` / `…_RETRY_*_DELAY` | retry/backoff فراخوانی مدل |
+| `CATALOGYAR_API_KEYS` / `CATALOGYAR_RATE_LIMIT_PER_MINUTE` | auth seller-scoped + rate limit |
+| `DIGIKALA_*` / `BASALAM_*` / `TOROB_*` | URL/token انتشار مارکت‌پلیس |
+
+جزئیات کامل: `backend/.env.example` و `docs/wiki/concepts/engine-config.md`.

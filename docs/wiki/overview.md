@@ -18,8 +18,8 @@ backend/app/
   schemas/catalog.py     # Pydantic ورودی/خروجی + Draft/Update
   pipeline/
     errors.py             # EngineNotConfiguredError / EngineCallError
-    retry.py               # with_retry روی خطای موقت شبکه/429
-    cache.py                # cache JSON تحلیل تصویر روی دیسک
+    retry.py               # call_with_retry روی خطای موقت شبکه/429/5xx
+    cache.py                # cache JSON تحلیل تصویر (hash محتوا + TTL)
     video.py                 # ffmpeg فریم‌گیری از ویدئو
     vision.py                 # تحلیل تصویر (مدل vision)
     speech.py                  # رونویسی ویس فارسی

@@ -56,5 +56,9 @@ Multipart form:
 `{"marketplace":"…","status":"published","response":"…"}`.
 
 ## مدل‌های پاسخ (خلاصه)
-جزئیات فیلدها در `docs/mvp-design.md` و [[entities/catalog-schemas]] (`docs/wiki/`).
+جزئیات فیلدها در `docs/mvp-design.md` و `docs/wiki/entities/catalog-schemas.md`.
 نسخهٔ انگلیسی در فیلد اختیاری `english` است.
+
+## پیکربندی مرتبط
+Auth، retry، cache تصویر و endpointهای مارکت‌پلیس از env خوانده می‌شوند — جدول خلاصه در
+`README.md`، مرجع کامل در `backend/.env.example` و `docs/wiki/concepts/engine-config.md`.
