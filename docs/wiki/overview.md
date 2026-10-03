@@ -14,6 +14,8 @@ backend/app/
   schemas/catalog.py   # مدل‌های Pydantic ورودی/خروجی
   pipeline/
     errors.py           # EngineNotConfiguredError / EngineCallError
+    retry.py             # retry/backoff مشترک فراخوانی مدل (فقط خطای موقت)
+    cache.py              # cache تحلیل تصویر بر اساس hash محتوا (فایل JSON روی دیسک)
     vision.py            # تحلیل تصویر — مدل vision واقعی (OpenAI-compatible)
     speech.py             # رونویسی ویس فارسی — مدل speech-to-text واقعی
     merge.py               # ادغام شواهد چندمنبعی (بدون فراخوانی مدل)
@@ -27,7 +29,9 @@ backend/app/
 ## وضعیت
 موتور به یک مدل OpenAI-compatible وصل است (پیش‌فرض `gpt-4o-mini` برای vision/generate،
 `whisper-1` برای speech). بدون `OPENAI_API_KEY` در env، endpoint خطای `503` روشن برمی‌گرداند
-(نه `501` مبهم). جزئیات در `docs/engine-design.md`.
+(نه `501` مبهم). هر سه فراخوانی مدل از `pipeline/retry.py` رد می‌شوند (retry فقط روی خطای موقت:
+شبکه/`429`/`5xx`) و نتیجه‌ی vision با hash محتوای عکس‌ها در `pipeline/cache.py` کش می‌شود؛
+تنظیمات و قراردادهایشان در [[concepts/engine-config]]. جزئیات در `docs/engine-design.md`.
 
 ## مستندات محصول
 - `docs/product-doc.md` — مسئله، راه‌حل، بازار هدف، مدل درآمدی، نقشه راه

@@ -31,11 +31,10 @@ _SYSTEM_PROMPT = (
 )
 
 
-def _image_to_data_url(path: str) -> str:
+def _image_to_data_url(data: bytes, path: str) -> str:
     suffix = Path(path).suffix.lstrip(".").lower() or "jpeg"
     mime = "jpeg" if suffix in ("jpg", "jpeg") else suffix
-    data = base64.b64encode(Path(path).read_bytes()).decode("ascii")
-    return f"data:image/{mime};base64,{data}"
+    return f"data:image/{mime};base64,{base64.b64encode(data).decode('ascii')}"
 
 
 def _parse_analysis(data: dict) -> ImageAnalysis:
@@ -59,8 +58,8 @@ def analyze_images(image_paths: list[str]) -> ImageAnalysis:
         return _parse_analysis(cached)
 
     content: list[dict] = [{"type": "text", "text": "این عکس‌های محصول را تحلیل کن."}]
-    for path in image_paths:
-        content.append({"type": "image_url", "image_url": {"url": _image_to_data_url(path)}})
+    for path, data in images:
+        content.append({"type": "image_url", "image_url": {"url": _image_to_data_url(data, path)}})
 
     client = OpenAI(api_key=OPENAI_API_KEY)
 

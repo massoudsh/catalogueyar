@@ -25,5 +25,3 @@ def transcribe_voice(audio_path: str) -> str:
         transcript = with_retry(call_model)
     except (OpenAIError, OSError) as exc:
         raise EngineCallError(f"خطا در رونویسی ویس: {exc}") from exc
-
-    return transcript.text.strip()
