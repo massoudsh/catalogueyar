@@ -30,4 +30,4 @@
 
 ## منابع کد
 - `backend/app/api/catalog.py` — همه routeها
-- `backend/app/main.py` — mount router + UI استاتیک `/`
+- `backend/app/main.py` — mount router + UI استاتیک `/` + CORS برای [[entities/frontend-app]]

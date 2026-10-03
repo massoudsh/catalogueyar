@@ -13,6 +13,7 @@
 - [[entities/vision]] — تحلیل تصویر محصول (+ cache روی دیسک)
 - [[entities/speech]] — رونویسی ویس فارسی (+ retry)
 - [[entities/generate]] — تولید کاتالوگ نهایی (+ english + تاریخچه‌ی فروشنده)
+- [[entities/frontend-app]] — UI React (Vite): لندینگ + workspace generate/edit
 
 ## Concepts
 - [[concepts/catalog-pipeline]] — فلو پردازش (video → vision → speech → merge → generate → store)

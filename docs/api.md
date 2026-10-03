@@ -19,6 +19,10 @@ Authorization: Bearer <api_key>
 | GET | `/` | رابط RTL استاتیک |
 | GET | `/health` | `{"status":"ok"}` |
 
+فرانت مدرن React در پوشهٔ `frontend/` روی پورت Vite (`5173`) اجرا می‌شود و به همین API
+وصل است. CORS با `CATALOGYAR_CORS_ORIGINS` (پیش‌فرض `http://127.0.0.1:5173,http://localhost:5173`)
+فعال است. راهنما: `frontend/README.md`.
+
 ## کاتالوگ
 
 ### `POST /catalog/generate`
