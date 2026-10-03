@@ -6,34 +6,47 @@
 
 ```
 docs/
-  product-doc.md     # مستند محصول: مسئله، راه‌حل، بازار، مدل درآمدی، نقشه راه
-  mvp-design.md       # طراحی دقیق ورودی/خروجی و pipeline نسخه‌ی اول
-  wiki/                # ویکی دانش زنده‌ی پروژه (entities/concepts) — قوانین در CLAUDE.md
+  product-doc.md         # مستند محصول
+  mvp-design.md           # طراحی ورودی/خروجی اولیه
+  engine-design.md         # معماری موتور + وضعیت فیچرها
+  api.md                    # مرجع HTTP endpointها
+  competitor-research.md     # تحقیق رقبا
+  wiki/                       # ویکی دانش زنده — قوانین در CLAUDE.md
 backend/
   app/
-    main.py            # FastAPI entrypoint
-    api/catalog.py      # endpointهای generate/history/edit/export/publish
-    pipeline/            # مراحل پردازش: retry, cache, video, vision, speech, merge, generate
+    main.py            # FastAPI + UI استاتیک /
+    api/catalog.py      # generate/history/edit/export/publish
+    pipeline/            # video, vision, speech, merge, generate, retry, cache
     schemas/catalog.py   # مدل‌های ورودی/خروجی
-    storage.py           # ذخیره‌سازی SQLite draft و feedback
+    storage.py           # SQLite draft و feedback
     auth.py              # Bearer API key و rate limit
+    marketplaces.py      # export/publish مارکت‌پلیس
 ```
 
-## ویکی دانش پروژه
+## مستندات
 
-`docs/wiki/` یک ویکی زنده و append-friendly است که کنار کد رشد می‌کند (به‌جای مستندسازی یک‌بار
-و کهنه‌شدن). قوانین کامل نگهداری‌اش در `CLAUDE.md` است — هر ایجنت یا توسعه‌دهنده‌ای که روی این
-ریپو کار می‌کند باید `docs/wiki/overview.md` و `docs/wiki/index.md` را ابتدا بخواند و بعد از هر
-تغییر معنایی، صفحه‌ی مرتبط را به‌روز کند.
+| سند | محتوا |
+|---|---|
+| `docs/wiki/overview.md` | نقطهٔ شروع ایجنت/توسعه‌دهنده |
+| `docs/api.md` | مرجع endpointها |
+| `docs/engine-design.md` | موتور AI و checklist فیچر |
+| `docs/product-doc.md` | مسئله، بازار، نقشه راه |
+| `docs/mvp-design.md` | قرارداد JSON اولیه |
+| `CLAUDE.md` | قوانین نگهداری ویکی |
+
+`docs/wiki/` ویکی زنده است: بعد از هر تغییر معنایی در کد، صفحهٔ مرتبط را به‌روز کنید.
 
 ## وضعیت فعلی
 
-اپ FastAPI آماده است و رابط RTL روی `/` سرو می‌شود. endpoint اصلی `POST /catalog/generate` عکس یا ویدئو، ویس اختیاری، توضیح فروشنده و دسته‌های مجاز را می‌گیرد و draft ساختاریافتهٔ فارسی/انگلیسی می‌سازد. draftها در SQLite ذخیره می‌شوند و endpointهای تاریخچه، جزئیات، ویرایش، export و publish برای بازارگاه‌ها در دسترس‌اند.
+اپ FastAPI آماده است و رابط RTL روی `/` سرو می‌شود. `POST /catalog/generate` عکس یا ویدئو، ویس اختیاری، توضیح فروشنده و دسته‌های مجاز را می‌گیرد و draft ساختاریافتهٔ فارسی/انگلیسی می‌سازد. draftها در SQLite ذخیره می‌شوند؛ history، detail، edit، export و publish برای digikala/basalam/torob در دسترس‌اند. برای جزئیات HTTP ببینید `docs/api.md`.
 
 ## اجرای محلی
 
 ```bash
 cd backend
+cp .env.example .env   # OPENAI_API_KEY را پر کنید؛ ffmpeg برای ویدئو لازم است
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
+
+OpenAPI تعاملی: `http://127.0.0.1:8000/docs`

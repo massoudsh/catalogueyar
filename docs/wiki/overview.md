@@ -1,43 +1,47 @@
 # Overview — کاتالوگ‌یار (CatalogYar)
 
 دستیار هوشمند ساخت کاتالوگ محصول: فروشنده به‌جای پرکردن فرم، عکس/ویدئو/ویس محصول را می‌فرستد
-و سیستم خروجی ساختاریافته‌ی کاتالوگ (عنوان، دسته‌بندی، توضیح، ویژگی‌ها، واریانت‌ها) را تولید می‌کند.
+و سیستم خروجی ساختاریافته‌ی کاتالوگ (عنوان، دسته‌بندی، توضیح، ویژگی‌ها، واریانت‌ها، نسخه‌ی انگلیسی)
+را تولید می‌کند. رابط RTL روی `/` سرو می‌شود.
 
-## معماری فعلی (موتور واقعی وصل شده)
-Backend تنها با FastAPI، بدون بیلد سنگین:
+## معماری فعلی
+Backend با FastAPI؛ draftها در SQLite؛ انتشار به مارکت‌پلیس از env:
 
 ```
 backend/app/
-  main.py            # FastAPI app + health check
-  config.py           # تنظیمات موتور (API key، نام مدل‌ها) از env
-  api/catalog.py      # POST /catalog/generate — pipeline را واقعاً صدا می‌زند
-  schemas/catalog.py   # مدل‌های Pydantic ورودی/خروجی
+  main.py              # FastAPI + static RTL UI روی /
+  config.py             # مدل‌ها، DB، API keys، endpoint مارکت‌پلیس‌ها
+  auth.py               # Bearer API key seller-scoped + rate limit
+  storage.py            # SQLite drafts + feedback + seller_context
+  marketplaces.py       # export/publish برای digikala|basalam|torob
+  api/catalog.py        # generate / history / detail / edit / export / publish
+  schemas/catalog.py     # Pydantic ورودی/خروجی + Draft/Update
   pipeline/
-    errors.py           # EngineNotConfiguredError / EngineCallError
-    retry.py             # retry/backoff مشترک فراخوانی مدل (فقط خطای موقت)
-    cache.py              # cache تحلیل تصویر بر اساس hash محتوا (فایل JSON روی دیسک)
-    vision.py            # تحلیل تصویر — مدل vision واقعی (OpenAI-compatible)
-    speech.py             # رونویسی ویس فارسی — مدل speech-to-text واقعی
-    merge.py               # ادغام شواهد چندمنبعی (بدون فراخوانی مدل)
-    generate.py             # تولید خروجی نهایی کاتالوگ — مدل زبانی واقعی
+    errors.py             # EngineNotConfiguredError / EngineCallError
+    retry.py               # with_retry روی خطای موقت شبکه/429
+    cache.py                # cache JSON تحلیل تصویر روی دیسک
+    video.py                 # ffmpeg فریم‌گیری از ویدئو
+    vision.py                 # تحلیل تصویر (مدل vision)
+    speech.py                  # رونویسی ویس فارسی
+    merge.py                    # ادغام شواهد (بدون مدل)
+    generate.py                  # خروجی نهایی کاتالوگ (+ english + history)
 ```
 
-جریان درخواست: `POST /catalog/generate` → `vision.analyze_images` → `speech.transcribe_voice`
-(اگر ویس بود) → `merge.merge_evidence` → `generate.generate_catalog` → پاسخ `CatalogGenerateResponse`.
-جزئیات کامل فلو در [[concepts/catalog-pipeline]].
+جریان `POST /catalog/generate`: auth → ویدئو→فریم (در صورت نیاز) → vision → speech → merge →
+generate(+seller history) → create_draft → پاسخ. جزئیات: [[concepts/catalog-pipeline]].
 
 ## وضعیت
-موتور به یک مدل OpenAI-compatible وصل است (پیش‌فرض `gpt-4o-mini` برای vision/generate،
-`whisper-1` برای speech). بدون `OPENAI_API_KEY` در env، endpoint خطای `503` روشن برمی‌گرداند
-(نه `501` مبهم). هر سه فراخوانی مدل از `pipeline/retry.py` رد می‌شوند (retry فقط روی خطای موقت:
-شبکه/`429`/`5xx`) و نتیجه‌ی vision با hash محتوای عکس‌ها در `pipeline/cache.py` کش می‌شود؛
-تنظیمات و قراردادهایشان در [[concepts/engine-config]]. جزئیات در `docs/engine-design.md`.
+موتور به API سازگار با OpenAI وصل است (پیش‌فرض `gpt-4o-mini` / `whisper-1`). بدون
+`OPENAI_API_KEY` → `503`. Auth اختیاری است: اگر `CATALOGYAR_API_KEYS` خالی باشد seller=`development`.
+ویدئو، تاریخچه/ویرایش draft، خروجی انگلیسی، و export/publish مارکت‌پلیس پیاده‌سازی شده‌اند.
+تنظیمات: [[concepts/engine-config]]. جزئیات موتور: `docs/engine-design.md`. API: `docs/api.md`.
 
 ## مستندات محصول
-- `docs/product-doc.md` — مسئله، راه‌حل، بازار هدف، مدل درآمدی، نقشه راه
-- `docs/mvp-design.md` — طراحی دقیق ورودی/خروجی JSON و pipeline ۷ مرحله‌ای
-- `docs/engine-design.md` — معماری موتور فعلی + نقشه‌ی راه فیچرهای بعدی
-- `docs/competitor-research.md` — جایگاه در بازار جهانی و ایران
+- `docs/product-doc.md` — مسئله، راه‌حل، بازار، مدل درآمدی، نقشه راه
+- `docs/mvp-design.md` — طراحی ورودی/خروجی و pipeline اولیه
+- `docs/engine-design.md` — معماری موتور + وضعیت فیچرها
+- `docs/api.md` — مرجع endpointها
+- `docs/competitor-research.md` — جایگاه بازار
 
 ## ریپو
 `https://github.com/massoudsh/catalogueyar` — برنچ `main`.
