@@ -9,9 +9,10 @@
 4. **speech (اختیاری)** — [[entities/speech]] `transcribe_voice` اگر ویس آمده باشد.
 5. **merge** — `merge_evidence(image_analysis, voice_transcript, seller_hint) -> MergedEvidence`
    در `backend/app/pipeline/merge.py`؛ بدون فراخوانی مدل.
-6. **generate** — [[entities/generate]] با `seller_context(seller_id)` به‌عنوان history.
-7. **store** — [[entities/storage]] `create_draft`؛ پاسخ همان `CatalogGenerateResponse` است
-   (metadata draft از history/detail خوانده می‌شود).
+6. **generate** — [[entities/generate]] با `seller_context` + `recent_feedback` و
+   `enforce_category` روی لیست دستهٔ مجاز.
+7. **store** — [[entities/storage]] `create_draft`؛ پاسخ `CatalogGenerateResponse` به‌همراه
+   `draft_id` برای ویرایش UI روی فیلدهای کم‌اطمینان.
 
 ## اتصال به API
 [[entities/catalog-router]] این مراحل را برای `POST /catalog/generate` پشت‌سرهم اجرا می‌کند و

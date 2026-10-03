@@ -5,8 +5,8 @@
 ## مسئولیت‌ها
 - `CatalogGenerateRequest` — فیلدهای فرمی جانبی (`seller_hint`, `store_category_list`).
 - `CatalogGenerateResponse` — خروجی نهایی: `title`, `category`, `description`, `attributes`,
-  `variants`, `missing_info_questions`, `source_evidence`, و اختیاری `english`
-  (`EnglishCatalog`: title/description/attributes).
+  `variants`, `missing_info_questions`, `source_evidence`, اختیاری `english`
+  (`EnglishCatalog`: title/description/attributes)، و اختیاری `draft_id` (فقط پاسخ HTTP).
 - `CatalogDraft` — wrapper ذخیره‌شده: `id`, `seller_id`, `created_at`, `updated_at`, `catalog`.
 - `CatalogUpdate` — PATCH جزئی؛ همه فیلدها اختیاری (جز آن‌هایی که فرستاده شوند).
 - `MarketplacePayload` — اسکلت marketplace + payload dict.

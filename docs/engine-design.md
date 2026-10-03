@@ -55,21 +55,20 @@ storage.create_draft()        → SQLite
 
 ### موتور
 1. ~~Retry/backoff~~ — ✅
-2. ~~Cache تحلیل تصویر~~ — ✅ (دیسک، TTL، enable-flag، `cache.stats()`)
+2. ~~Cache تحلیل تصویر~~ — ✅ (دیسک، TTL، enable-flag، `cache.stats()` مشترک روی دیسک)
 3. ~~پردازش ویدئو (فریم‌گیری)~~ — ✅ (`pipeline/video.py` + ffmpeg)
 4. ~~تشخیص چند رنگ / variant از ست عکس~~ — ✅ (پرامپت vision+generate)
-5. **مدل گفتار فارسی اختصاصی‌تر** اگر whisper برای لهجه‌های محلی کافی نبود.
+5. **مدل گفتار فارسی اختصاصی‌تر** اگر whisper برای لهجه‌های محلی کافی نبود
+   (`CATALOGYAR_SPEECH_MODEL` از الان overrideپذیر است).
 
 ### محصول
-6. ~~ویرایش خروجی + ثبت feedback~~ — ✅ (`PATCH /catalog/{id}` + جدول feedback)
-7. ~~یادگیری سبک از تاریخچه فروشنده~~ — ✅ سبک (`seller_context` در پرامپت generate)
+6. ~~ویرایش خروجی + ثبت feedback~~ — ✅ (`PATCH /catalog/{id}` + جدول feedback + UI کم‌اطمینان)
+7. ~~یادگیری سبک از تاریخچه فروشنده~~ — ✅ `seller_context` + `recent_feedback` در پرامپت generate
 8. ~~خروجی/انتشار مارکت‌پلیس~~ — ✅ export + publish با URL از env (اتصال واقعی وابسته به credential)
 9. ~~خروجی دو زبانه (FA + EN)~~ — ✅ فیلد `english`
 10. ~~Auth و rate limiting~~ — ✅ Bearer API key
+11. ~~اعتبارسنجی سخت دسته~~ — ✅ `enforce_category` روی `store_category_list`
 
 ### باقی‌مانده / سخت‌تر
-- UI تعاملی غنی‌تر روی فیلدهای low-confidence (الان RTL پایه روی `/` هست).
-- اعتبارسنجی سخت `category.suggested ∈ store_category_list` سمت سرور.
-- حلقهٔ یادگیری واقعی از جدول feedback (فعلاً فقط ذخیره می‌شود).
-- یکپارچگی عمیق‌تر با API رسمی هر مارکت‌پلیس (الان POST عمومی با payload داخلی است).
-- observability چند-process برای cache (الان شمارنده‌ها per-worker هستند).
+- مدل گفتار فارسی اختصاصی‌تر از whisper (نیاز به انتخاب/هاست مدل جایگزین).
+- یکپارچگی عمیق‌تر با API رسمی هر مارکت‌پلیس (الان POST عمومی با payload داخلی است؛ نیاز به credential و قرارداد رسمی).

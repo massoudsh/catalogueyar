@@ -44,7 +44,8 @@
 - **Graceful degradation**: هر خطای I/O (دایرکتوری نبود، ورودی خراب، دیسک پر) فقط warning لاگ
   می‌شود و مسیر عادی (فراخوانی مدل) ادامه پیدا می‌کند — cache هرگز درخواست را fail نمی‌کند.
 - Observability: هر hit/miss/expire یک خط لاگ دارد و `cache.stats()` شمارنده‌های
-  `hits/misses/stores/expired/errors` را برمی‌گرداند (in-process؛ با چند worker هر worker جدا).
+  `hits/misses/stores/expired/errors` را برمی‌گرداند؛ علاوه بر شمارندهٔ in-process، فایل
+  `_stats.json` زیر cache dir بین workerها مشترک است (best-effort).
 
 ## چرا این جداسازی
 هر سه ماژول مدل‌محور همین دو خطا و همین تنظیم‌ها را به‌صورت یکسان استفاده می‌کنند؛ به‌جای

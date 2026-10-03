@@ -43,6 +43,8 @@ class CatalogGenerateResponse(BaseModel):
     missing_info_questions: list[str]
     source_evidence: SourceEvidence
     english: EnglishCatalog | None = None
+    # فقط در پاسخ HTTP بعد از create_draft پر می‌شود؛ در SQLite معمولاً null می‌ماند.
+    draft_id: str | None = None
 
 
 class CatalogDraft(BaseModel):

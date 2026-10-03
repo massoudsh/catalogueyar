@@ -29,23 +29,64 @@ logger = logging.getLogger(__name__)
 # هر دو نام patchable هستند؛ تست‌های قدیمی VISION_CACHE_DIR و جدید IMAGE_CACHE_* را patch می‌کنند.
 _COUNTERS = {"hits": 0, "misses": 0, "stores": 0, "expired": 0, "errors": 0}
 _LOCK = threading.Lock()
+_STATS_FILENAME = "_stats.json"
+
+
+def _stats_path() -> Path:
+    return _cache_root() / _STATS_FILENAME
+
+
+def _persist_bump(name: str) -> None:
+    """شمارندهٔ مشترک بین workerها روی دیسک (best-effort، بدون fail کردن درخواست)."""
+    path = _stats_path()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        current = {key: 0 for key in _COUNTERS}
+        if path.exists():
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                for key in _COUNTERS:
+                    value = loaded.get(key, 0)
+                    current[key] = int(value) if isinstance(value, (int, float)) else 0
+        current[name] = current.get(name, 0) + 1
+        payload = json.dumps(current, ensure_ascii=False)
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as tmp:
+            tmp.write(payload)
+            tmp_path = Path(tmp.name)
+        os.replace(tmp_path, path)
+    except Exception as exc:
+        logger.debug("نوشتن شمارندهٔ مشترک cache ناموفق بود: %s", exc)
 
 
 def _bump(name: str) -> None:
     with _LOCK:
         _COUNTERS[name] += 1
+        _persist_bump(name)
 
 
 def stats() -> dict[str, int]:
-    """شمارنده‌های in-process برای اثبات کارکرد cache."""
+    """شمارنده‌ها: اگر فایل مشترک باشد همان را برمی‌گرداند، وگرنه in-process."""
     with _LOCK:
-        return dict(_COUNTERS)
+        local = dict(_COUNTERS)
+    try:
+        path = _stats_path()
+        if path.exists():
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                return {key: int(loaded.get(key, 0) or 0) for key in _COUNTERS}
+    except Exception:
+        pass
+    return local
 
 
 def reset_stats() -> None:
     with _LOCK:
         for name in _COUNTERS:
             _COUNTERS[name] = 0
+        try:
+            _stats_path().unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def build_key(model: str, version: str, image_bytes: list[bytes]) -> str:

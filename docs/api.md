@@ -32,7 +32,9 @@ Multipart form:
 | `store_category_list` | form string (تکرارپذیر) | خیر | دسته‌های مجاز پلتفرم |
 
 پاسخ: `CatalogGenerateResponse` (عنوان، دسته، توضیح، attributes، variants،
-`missing_info_questions`، `source_evidence`، `english`). Draft هم‌زمان در SQLite ذخیره می‌شود.
+`missing_info_questions`، `source_evidence`، `english`، و `draft_id` برای ویرایش بعدی).
+اگر `store_category_list` داده شود، `category.suggested` حتماً یکی از همان‌ها خواهد بود.
+Draft هم‌زمان در SQLite ذخیره می‌شود؛ اصلاح‌های PATCH قبلی فروشنده وارد پرامپت generate می‌شوند.
 
 خطاها: `400` تعداد مدیا؛ `401` کلید؛ `429` نرخ؛ `503` بدون `OPENAI_API_KEY`؛ `502` مدل/ffmpeg.
 

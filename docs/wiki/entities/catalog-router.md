@@ -4,7 +4,7 @@
 
 ## مسئولیت‌ها
 - `POST /catalog/generate` — آپلود ۱–۵ عکس/ویدئو + ویس اختیاری؛ اجرای [[concepts/catalog-pipeline]]؛
-  ذخیرهٔ draft در [[entities/storage]].
+  ذخیرهٔ draft در [[entities/storage]] و برگرداندن `draft_id` در پاسخ.
 - `GET /catalog/history` — لیست draftهای فروشندهٔ فعلی.
 - `GET /catalog/{draft_id}` — جزئیات یک draft.
 - `PATCH /catalog/{draft_id}` — ویرایش جزئی فیلدها (`CatalogUpdate`) و ثبت feedback.

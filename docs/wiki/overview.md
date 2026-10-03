@@ -33,7 +33,8 @@ generate(+seller history) → create_draft → پاسخ. جزئیات: [[concept
 ## وضعیت
 موتور به API سازگار با OpenAI وصل است (پیش‌فرض `gpt-4o-mini` / `whisper-1`). بدون
 `OPENAI_API_KEY` → `503`. Auth اختیاری است: اگر `CATALOGYAR_API_KEYS` خالی باشد seller=`development`.
-ویدئو، تاریخچه/ویرایش draft، خروجی انگلیسی، و export/publish مارکت‌پلیس پیاده‌سازی شده‌اند.
+ویدئو، تاریخچه/ویرایش draft، خروجی انگلیسی، export/publish مارکت‌پلیس، اعتبارسنجی دسته،
+یادگیری از feedback، و UI فیلدهای کم‌اطمینان پیاده‌سازی شده‌اند.
 تنظیمات: [[concepts/engine-config]]. جزئیات موتور: `docs/engine-design.md`. API: `docs/api.md`.
 
 ## مستندات محصول
