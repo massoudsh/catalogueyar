@@ -23,6 +23,12 @@ class Category(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
 
 
+class EnglishCatalog(BaseModel):
+    title: str = ""
+    description: str = ""
+    attributes: list[Attribute] = []
+
+
 class CatalogGenerateRequest(BaseModel):
     seller_hint: str | None = None
     store_category_list: list[str] | None = None
@@ -36,3 +42,27 @@ class CatalogGenerateResponse(BaseModel):
     variants: list[Variant]
     missing_info_questions: list[str]
     source_evidence: SourceEvidence
+    english: EnglishCatalog | None = None
+
+
+class CatalogDraft(BaseModel):
+    id: str
+    seller_id: str
+    created_at: str
+    updated_at: str
+    catalog: CatalogGenerateResponse
+
+
+class CatalogUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    category: Category | None = None
+    attributes: list[Attribute] | None = None
+    variants: list[Variant] | None = None
+    missing_info_questions: list[str] | None = None
+    english: EnglishCatalog | None = None
+
+
+class MarketplacePayload(BaseModel):
+    marketplace: str
+    payload: dict
