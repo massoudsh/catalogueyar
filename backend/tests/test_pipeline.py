@@ -21,13 +21,13 @@ from app.marketplaces import export_payload
 from app.pipeline import cache
 from app.pipeline.cache import cache_key
 from app.pipeline.errors import EngineCallError, EngineNotConfiguredError
-from app.pipeline.generate import generate_catalog
+from app.pipeline.generate import enforce_category, generate_catalog
 from app.pipeline.merge import MergedEvidence, merge_evidence
 from app.pipeline.retry import call_with_retry
 from app.pipeline.speech import transcribe_voice
 from app.pipeline.vision import ImageAnalysis, analyze_images
-from app.schemas.catalog import CatalogGenerateResponse, CatalogUpdate
-from app.storage import create_draft, get_draft, seller_context, update_draft
+from app.schemas.catalog import CatalogGenerateResponse, CatalogUpdate, Category
+from app.storage import create_draft, get_draft, recent_feedback, seller_context, update_draft
 
 _API_URL = "https://api.openai.com/v1/chat/completions"
 
@@ -169,6 +169,41 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(result.variants[0].options, ["مشکی", "قهوه‌ای"])
         self.assertEqual(result.english.title, "Black leather bag")
 
+    def test_enforce_category_clamps_to_allowed_list(self):
+        exact = enforce_category(Category(suggested="کیف", confidence=0.9), ["کیف", "کفش"])
+        self.assertEqual(exact.suggested, "کیف")
+        self.assertEqual(exact.confidence, 0.9)
+
+        folded = enforce_category(Category(suggested="BAG", confidence=0.8), ["bag", "shoes"])
+        self.assertEqual(folded.suggested, "bag")
+
+        forced = enforce_category(Category(suggested="نامعتبر", confidence=0.9), ["کیف", "کفش"])
+        self.assertEqual(forced.suggested, "کیف")
+        self.assertEqual(forced.confidence, 0.35)
+
+    def test_generate_enforces_store_category_list(self):
+        response = json.dumps(
+            {
+                "title": "کیف",
+                "category": {"suggested": "دستهٔ ساختگی", "confidence": 0.95},
+                "description": "توضیح",
+                "attributes": [],
+                "variants": [],
+                "missing_info_questions": [],
+                "source_evidence": {},
+            }
+        )
+        with patch("app.pipeline.generate.OPENAI_API_KEY", "test-key"), patch(
+            "app.pipeline.generate.OpenAI",
+            return_value=SimpleNamespace(chat=SimpleNamespace(completions=FakeCompletions(response))),
+        ):
+            result = generate_catalog(
+                MergedEvidence(detected_type="کیف"),
+                category_list=["اکسسوری", "کیف"],
+            )
+        self.assertEqual(result.category.suggested, "اکسسوری")
+        self.assertLessEqual(result.category.confidence, 0.35)
+
     def test_missing_key_fails_without_calling_model(self):
         with patch("app.pipeline.vision.OPENAI_API_KEY", ""):
             with self.assertRaises(EngineNotConfiguredError):
@@ -206,6 +241,38 @@ class PipelineTests(unittest.TestCase):
             updated = update_draft("seller", draft.id, CatalogUpdate(title="کیف جدید"))
             self.assertEqual(updated.catalog.title, "کیف جدید")
             self.assertEqual(seller_context("seller")[0].title, "کیف جدید")
+            self.assertEqual(recent_feedback("seller"), [{"title": "کیف جدید"}])
+
+    def test_generate_includes_feedback_in_prompt(self):
+        captured = {}
+
+        class CapturingCompletions(FakeCompletions):
+            def create(self, **kwargs):
+                captured["messages"] = kwargs["messages"]
+                return super().create(**kwargs)
+
+        response = json.dumps(
+            {
+                "title": "کیف",
+                "category": {"suggested": "کیف", "confidence": 0.9},
+                "description": "توضیح",
+                "attributes": [],
+                "variants": [],
+                "missing_info_questions": [],
+                "source_evidence": {},
+            }
+        )
+        with patch("app.pipeline.generate.OPENAI_API_KEY", "test-key"), patch(
+            "app.pipeline.generate.OpenAI",
+            return_value=SimpleNamespace(chat=SimpleNamespace(completions=CapturingCompletions(response))),
+        ):
+            generate_catalog(
+                MergedEvidence(detected_type="کیف"),
+                feedback=[{"title": "کیف دست‌دوز"}],
+            )
+        user_prompt = captured["messages"][1]["content"]
+        self.assertIn("اصلاح‌های اخیر", user_prompt)
+        self.assertIn("کیف دست‌دوز", user_prompt)
 
     def test_marketplace_export_uses_catalog_fields(self):
         catalog = CatalogGenerateResponse(
@@ -467,6 +534,18 @@ class ImageCacheTests(unittest.TestCase):
 
         self.assertEqual(completions.calls, 2)
         self.assertEqual(cache.stats()["hits"], 0)
+
+    def test_shared_stats_file_survives_process_counter_reset(self):
+        completions = CountingCompletions(_VISION_JSON)
+        path = self._image(b"shared-stats")
+        self._analyze([path], completions)
+        self._analyze([path], completions)
+        self.assertEqual(cache.stats()["hits"], 1)
+        # شمارندهٔ in-process صفر شود؛ فایل مشترک باید hit را نگه دارد
+        with cache._LOCK:
+            for name in cache._COUNTERS:
+                cache._COUNTERS[name] = 0
+        self.assertEqual(cache.stats()["hits"], 1)
 
 
 if __name__ == "__main__":

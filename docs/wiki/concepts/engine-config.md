@@ -1,7 +1,6 @@
 # Engine Config
 
-> تنظیمات مشترک موتور هوش مصنوعی (کلید API، نام مدل‌ها، retry/backoff، cache) و خطاهای مشترک بین
-> سه مرحله‌ی مدل‌محور pipeline ([[entities/vision]], [[entities/speech]], [[entities/generate]]).
+> تنظیمات env، خطاهای مشترک موتور، retry و cache تصویر.
 
 ## `backend/app/config.py`
 همه از env var خوانده می‌شود، هیچ کلیدی در کد نیست:
@@ -45,7 +44,8 @@
 - **Graceful degradation**: هر خطای I/O (دایرکتوری نبود، ورودی خراب، دیسک پر) فقط warning لاگ
   می‌شود و مسیر عادی (فراخوانی مدل) ادامه پیدا می‌کند — cache هرگز درخواست را fail نمی‌کند.
 - Observability: هر hit/miss/expire یک خط لاگ دارد و `cache.stats()` شمارنده‌های
-  `hits/misses/stores/expired/errors` را برمی‌گرداند (in-process؛ با چند worker هر worker جدا).
+  `hits/misses/stores/expired/errors` را برمی‌گرداند؛ علاوه بر شمارندهٔ in-process، فایل
+  `_stats.json` زیر cache dir بین workerها مشترک است (best-effort).
 
 ## چرا این جداسازی
 هر سه ماژول مدل‌محور همین دو خطا و همین تنظیم‌ها را به‌صورت یکسان استفاده می‌کنند؛ به‌جای
@@ -64,8 +64,5 @@
 ## منابع کد
 - `backend/app/config.py`
 - `backend/app/pipeline/errors.py`
-- `backend/app/pipeline/retry.py:64` — `call_with_retry`
-- `backend/app/pipeline/retry.py:32` — `is_transient` (تفکیک خطای موقت از خطای کلاینت)
-- `backend/app/pipeline/cache.py:52` — `build_key`
-- `backend/app/pipeline/cache.py:68` — `get`
-- `backend/app/pipeline/cache.py:103` — `put`
+- `backend/app/pipeline/retry.py`
+- `backend/app/pipeline/cache.py`

@@ -82,7 +82,7 @@
           <p id="result-description">بعد از ارسال فرم، عنوان، دسته پیشنهادی، توضیح و ویژگی‌ها اینجا نمایش داده می‌شود.</p>
         </div>
 
-        <div class="result-meta">
+        <div class="result-meta" id="category-meta">
           <div>
             <span>دسته پیشنهادی</span>
             <strong id="result-category">—</strong>
@@ -91,6 +91,11 @@
             <span>اعتماد</span>
             <strong id="result-confidence">—</strong>
           </div>
+        </div>
+
+        <div class="edit-actions is-hidden" id="edit-actions">
+          <p class="hint">فیلدهای کم‌اطمینان (زیر ۷۰٪) هایلایت شده‌اند؛ بعد از اصلاح ذخیره کن.</p>
+          <button class="button button--ghost" type="button" id="save-edits">ذخیرهٔ اصلاحات</button>
         </div>
 
         <div class="tabs" role="tablist" aria-label="بخش‌های خروجی">

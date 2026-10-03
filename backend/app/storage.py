@@ -60,3 +60,21 @@ def update_draft(seller_id: str, draft_id: str, update: CatalogUpdate) -> Catalo
 
 def seller_context(seller_id: str, limit: int = 5) -> list[CatalogGenerateResponse]:
     return [draft.catalog for draft in list_drafts(seller_id, limit)]
+
+
+def recent_feedback(seller_id: str, limit: int = 8) -> list[dict]:
+    """آخرین اصلاح‌های PATCH فروشنده برای یادگیری سبک در generate."""
+    with _connect() as connection:
+        rows = connection.execute(
+            "SELECT changes FROM feedback WHERE seller_id = ? ORDER BY created_at DESC LIMIT ?",
+            (seller_id, limit),
+        ).fetchall()
+    result: list[dict] = []
+    for row in rows:
+        try:
+            payload = json.loads(row["changes"])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict) and payload:
+            result.append(payload)
+    return result

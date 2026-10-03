@@ -13,7 +13,14 @@ from app.pipeline.speech import transcribe_voice
 from app.pipeline.video import extract_video_frames, is_video
 from app.pipeline.vision import analyze_images
 from app.schemas.catalog import CatalogDraft, CatalogGenerateResponse, CatalogUpdate
-from app.storage import create_draft, get_draft, list_drafts, seller_context, update_draft
+from app.storage import (
+    create_draft,
+    get_draft,
+    list_drafts,
+    recent_feedback,
+    seller_context,
+    update_draft,
+)
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
 
@@ -62,9 +69,14 @@ async def generate_catalog_endpoint(
         image_analysis = analyze_images(image_paths)
         voice_transcript = transcribe_voice(voice_path) if voice_path else None
         evidence = merge_evidence(image_analysis, voice_transcript, seller_hint)
-        catalog = generate_catalog(evidence, store_category_list, seller_context(seller_id))
-        create_draft(seller_id, catalog)
-        return catalog
+        catalog = generate_catalog(
+            evidence,
+            store_category_list,
+            seller_context(seller_id),
+            recent_feedback(seller_id),
+        )
+        draft = create_draft(seller_id, catalog)
+        return catalog.model_copy(update={"draft_id": draft.id})
     except EngineNotConfiguredError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except EngineCallError as exc:

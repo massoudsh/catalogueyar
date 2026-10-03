@@ -3,35 +3,29 @@
 > تحلیل تصویر محصول: نوع، رنگ، جنس ظاهری، متن روی بسته‌بندی.
 
 ## مسئولیت‌ها
-- `analyze_images(image_paths) -> ImageAnalysis` — قدم اول pipeline.
+- `analyze_images(image_paths) -> ImageAnalysis` — قدم vision در pipeline.
 - `ImageAnalysis` dataclass: `detected_type`, `colors`, `material_guess`, `text_on_package`.
+- رنگ‌ها با `dict.fromkeys` یکتا می‌شوند تا برای variants چندرنگ آماده باشند.
 
 ## وابستگی‌ها
-- [[concepts/catalog-pipeline]] — اولین مرحله؛ `ImageAnalysis` ورودی مرحله‌ی merge است
-- [[concepts/engine-config]] — `OPENAI_API_KEY`، `CATALOGYAR_VISION_MODEL`، تنظیمات retry و cache
-- `backend/app/pipeline/retry.py` — فراخوانی مدل از `call_with_retry` رد می‌شود
-- `backend/app/pipeline/cache.py` — cache نتیجه بر اساس hash محتوای عکس‌ها
+- [[concepts/catalog-pipeline]] — بعد از [[entities/video]]؛ خروجی وارد merge می‌شود
+- [[concepts/engine-config]] — `OPENAI_API_KEY`, `CATALOGYAR_VISION_MODEL`, cache dir/TTL/enable, retry
+- `backend/app/pipeline/retry.py` — `call_with_retry` دور `chat.completions.create`
+- `backend/app/pipeline/cache.py` — `build_key` / `get` / `put` / `invalidate`
 
 ## قراردادها / Edge cases
-- عکس‌ها به data URL (base64) تبدیل و در یک پیام چندبخشی به مدل vision فرستاده می‌شوند. هر فایل
-  فقط یک‌بار خوانده می‌شود (هم برای hash، هم برای data URL).
-- **Cache**: قبل از فراخوانی مدل، کلید از SHA-256 محتوای عکس‌ها + نام مدل + `_ANALYSIS_CACHE_VERSION`
-  ساخته و cache چک می‌شود؛ hit یعنی هیچ درخواستی به مدل نمی‌رود (لاگ `cache hit` + شمارنده‌ی
-  `cache.stats()`). نتیجه‌ی موفق بعد از فراخوانی ذخیره می‌شود. بامپ `_ANALYSIS_CACHE_VERSION` تنها
-  راه invalidate کردن دستی هنگام تغییر پرامپت/ساختار خروجی است.
-- ترتیب عکس‌ها در کلید cache می‌آید: `[a, b]` با `[b, a]` یکسان حساب نمی‌شود (عکس اول/main photo
-  معنادار است). نام و مسیر فایل در کلید اثر ندارد؛ تنها چیزی که از مسیر به مدل می‌رود پسوند فایل
-  است (mime در data URL) که عمداً در کلید نیامده — دو فایل با بایت یکسان ولی پسوند متفاوت همان
-  نتیجه را می‌گیرند (پیکسل‌ها یکسان است).
-- ورودی cache خراب یا ناخوانا → warning و برگشت به فراخوانی عادی مدل (نه خطا به کاربر).
-- خروجی مدل باید JSON خالص باشد (`response_format=json_object`)؛ JSON نامعتبر **retry نمی‌شود** و
-  مستقیم `EngineCallError` می‌دهد.
-- خطای موقت شبکه/`429`/`5xx` تا `CATALOGYAR_MODEL_MAX_ATTEMPTS` بار با backoff دوباره تلاش می‌شود؛
-  خطای `4xx` کلاینت یک‌بار. در نهایت (بعد از تمام‌شدن تلاش‌ها) `EngineCallError` می‌دهد.
-- بدون `OPENAI_API_KEY` بلافاصله `EngineNotConfiguredError` می‌دهد (بدون فراخوانی شبکه، و قبل از
-  چک کردن cache).
+- هر فایل یک‌بار خوانده می‌شود (هم برای hash محتوا، هم برای data URL).
+- کلید cache = SHA-256 از digest محتوای عکس‌ها + نام مدل + `_ANALYSIS_CACHE_VERSION`؛
+  ترتیب آپلود در کلید اثر دارد؛ نام/مسیر فایل نه.
+- hit → بدون فراخوانی مدل؛ اگر payload با schema فعلی نخواند → `invalidate` + miss.
+- miss موفق → `put` اتمیک (temp + `os.replace`) زیر
+  `CATALOGYAR_IMAGE_CACHE_DIR` / `CATALOGYAR_VISION_CACHE_DIR`.
+- TTL پیش‌فرض ۷ روز (`CATALOGYAR_IMAGE_CACHE_TTL_SECONDS`)؛
+  `CATALOGYAR_IMAGE_CACHE_ENABLED=0` cache را خاموش می‌کند.
+- خروجی باید JSON باشد؛ JSON نامعتبر یا خطای OpenAI → `EngineCallError`.
+- خطای موقت فقط از طریق `call_with_retry` (شبکه / `429` / `5xx` / `408`) تکرار می‌شود.
+- بدون `OPENAI_API_KEY` → `EngineNotConfiguredError` قبل از مدل.
 
 ## منابع کد
-- `backend/app/pipeline/vision.py:49` — `analyze_images`
-- `backend/app/pipeline/vision.py:23` — `ImageAnalysis`
-- `backend/app/pipeline/vision.py:20` — `_ANALYSIS_CACHE_VERSION`
+- `backend/app/pipeline/vision.py` — `analyze_images`, `ImageAnalysis`, `_ANALYSIS_CACHE_VERSION`
+- `backend/app/pipeline/cache.py` — cache دیسکی با TTL

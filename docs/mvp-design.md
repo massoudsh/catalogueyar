@@ -7,7 +7,7 @@
 
 | فیلد | نوع | اجباری | توضیح |
 |---|---|---|---|
-| `images` | لیست فایل تصویر (۱ تا ۵ عکس) | بله | عکس‌های محصول از زوایای مختلف |
+| `images` | لیست فایل تصویر یا ویدئو (۱ تا ۵) | بله | عکس/ویدئوی محصول؛ ویدئو با ffmpeg به فریم تبدیل می‌شود |
 | `voice_note` | فایل صوتی فارسی (اختیاری) | خیر | توضیح شفاهی فروشنده درباره‌ی محصول |
 | `seller_hint` | متن آزاد کوتاه (اختیاری) | خیر | مثلاً «این یه گیوه دست‌بافه» — کمک به مدل |
 | `store_category_list` | لیست دسته‌بندی‌های مجاز پلتفرم | خیر (توصیه‌شده) | برای اینکه خروجی dropdown پلتفرم را رعایت کند |
@@ -37,6 +37,11 @@
     "from_image": ["رنگ", "جنس ظاهری", "نوع محصول"],
     "from_voice": ["کاربرد", "قیمت"],
     "from_text_on_package": []
+  },
+  "english": {
+    "title": "string",
+    "description": "string",
+    "attributes": [{"name": "Color", "value": "Red", "confidence": 0.9}]
   }
 }
 ```
@@ -60,23 +65,23 @@
 ```
 backend/
   app/
-    main.py                  # FastAPI entrypoint
-    api/
-      catalog.py              # POST /catalog/generate
+    main.py                  # FastAPI + UI استاتیک /
+    config.py                 # env: مدل‌ها، DB، auth، cache، مارکت‌پلیس
+    auth.py / storage.py / marketplaces.py
+    api/catalog.py            # generate / history / edit / export / publish
     pipeline/
-      vision.py               # تحلیل تصویر محصول
-      speech.py                # رونویسی ویس فارسی
-      merge.py                 # ادغام شواهد چندمنبعی
-      generate.py              # تولید عنوان/توضیح/ویژگی از شواهد ادغام‌شده
-    schemas/
-      catalog.py               # مدل‌های Pydantic ورودی/خروجی
+      video.py / vision.py / speech.py / merge.py / generate.py
+      retry.py / cache.py / errors.py
+    schemas/catalog.py         # ورودی/خروجی + Draft/Update
 ```
 
-- هر مرحله‌ی pipeline (vision / speech / merge / generate) پشت یک interface ساده قرار می‌گیرد تا بعداً بدون تغییر API بتوان مدل زیرین را عوض کرد.
-- در نسخه‌ی اول، `vision.py` و `speech.py` می‌توانند به یک مدل چندوجهی (multimodal) بیرونی متصل شوند؛ جزئیات ارائه‌دهنده در فاز پیاده‌سازی مشخص می‌شود.
+- هر مرحله‌ی pipeline پشت interface ساده است تا بتوان مدل زیرین را عوض کرد.
+- جزئیات وضعیت فیچر و قرارداد HTTP: `docs/engine-design.md` و `docs/api.md`.
 
-## خارج از محدوده‌ی MVP
-- پردازش ویدئو (فریم‌گیری)
-- تشخیص هم‌زمان چند واریانت رنگی از یک ست عکس
-- یادگیری بازخورد فروشنده به‌صورت خودکار (فاز بعدی)
-- یکپارچگی مستقیم با مارکت‌پلیس (API خروجی فعلاً فقط JSON داخلی است)
+## وضعیت نسبت به کد فعلی
+بسیاری از موارد «خارج از MVP» اولیه اکنون پیاده شده‌اند؛ منبع حقیقت وضعیت فیچر:
+`docs/engine-design.md` و `docs/api.md`.
+
+**هنوز خارج از محدودهٔ کامل / بعدی:**
+- اتصال عمیق به API رسمی هر مارکت‌پلیس فراتر از POST عمومی env-driven
+- مدل گفتار فارسی اختصاصی‌تر از whisper پیش‌فرض

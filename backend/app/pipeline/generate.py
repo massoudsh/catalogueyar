@@ -33,6 +33,7 @@ def _evidence_to_prompt(
     evidence: MergedEvidence,
     category_list: list[str] | None,
     history: list[CatalogGenerateResponse] | None = None,
+    feedback: list[dict] | None = None,
 ) -> str:
     lines = [
         f"نوع تشخیص‌داده‌شده از تصویر: {evidence.detected_type or 'نامشخص'}",
@@ -47,6 +48,12 @@ def _evidence_to_prompt(
     if history:
         lines.append("نمونه‌های اخیر همین فروشنده برای حفظ لحن و دسته‌بندی:")
         lines.extend(f"- {item.title} | {item.category.suggested}" for item in history)
+    if feedback:
+        lines.append("اصلاح‌های اخیر همین فروشنده (ترجیح بده این الگوها را رعایت کنی):")
+        for change in feedback:
+            parts = [f"{key}={value}" for key, value in change.items()]
+            if parts:
+                lines.append("- " + " | ".join(parts))
     return "\n".join(lines)
 
 
@@ -54,10 +61,30 @@ def _attributes(items: list[dict]) -> list[Attribute]:
     return [Attribute(**item) for item in items or []]
 
 
+def enforce_category(category: Category, category_list: list[str] | None) -> Category:
+    """اگر لیست مجاز داده شده، suggested باید دقیقاً یکی از همان‌ها باشد."""
+    allowed = [item.strip() for item in (category_list or []) if item and item.strip()]
+    if not allowed:
+        return category
+
+    suggested = (category.suggested or "").strip()
+    if suggested in allowed:
+        return Category(suggested=suggested, confidence=category.confidence)
+
+    folded = {item.casefold(): item for item in allowed}
+    match = folded.get(suggested.casefold())
+    if match is not None:
+        return Category(suggested=match, confidence=category.confidence)
+
+    # خارج از لیست → اجبار به اولین گزینه مجاز و کاهش confidence
+    return Category(suggested=allowed[0], confidence=min(category.confidence, 0.35))
+
+
 def generate_catalog(
     evidence: MergedEvidence,
     category_list: list[str] | None = None,
     history: list[CatalogGenerateResponse] | None = None,
+    feedback: list[dict] | None = None,
 ) -> CatalogGenerateResponse:
     if not OPENAI_API_KEY:
         raise EngineNotConfiguredError(
@@ -72,7 +99,10 @@ def generate_catalog(
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": _evidence_to_prompt(evidence, category_list, history)},
+                {
+                    "role": "user",
+                    "content": _evidence_to_prompt(evidence, category_list, history, feedback),
+                },
             ],
         )
 
@@ -84,9 +114,13 @@ def generate_catalog(
         raise EngineCallError(f"خطا در تولید کاتالوگ: {exc}") from exc
 
     english = data.get("english")
+    category = enforce_category(
+        Category(**(data.get("category") or {"suggested": "", "confidence": 0.0})),
+        category_list,
+    )
     return CatalogGenerateResponse(
         title=data.get("title", ""),
-        category=Category(**(data.get("category") or {"suggested": "", "confidence": 0.0})),
+        category=category,
         description=data.get("description", ""),
         attributes=_attributes(data.get("attributes") or []),
         variants=[Variant(**variant) for variant in data.get("variants") or []],
