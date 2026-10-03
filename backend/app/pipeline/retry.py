@@ -1,21 +1,98 @@
-import time
+"""Retry/backoff برای فراخوانی مدل‌های بیرونی (vision/speech/generate).
+
+فقط خطاهای **موقت** (قطعی شبکه، تایم‌اوت، `429` و `5xx`) دوباره تلاش می‌شوند؛ خطاهای
+`4xx` کلاینت (مثل `400`/`401`/`403`) بلافاصله بالا می‌روند چون تکرارشان فقط تأخیر و
+هزینه‌ی اضافه است. تعداد تلاش‌ها/تأخیرها در config قابل تنظیم است.
+"""
+
+from __future__ import annotations
+
+import logging
+import random
 from collections.abc import Callable
+from time import sleep
 from typing import TypeVar
 
-from openai import APIConnectionError, APITimeoutError, RateLimitError
+from openai import APIConnectionError, APIStatusError, APITimeoutError, RateLimitError
+
+from app.config import MODEL_MAX_ATTEMPTS, MODEL_RETRY_BASE_DELAY, MODEL_RETRY_MAX_DELAY
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
-TRANSIENT_ERRORS = (APIConnectionError, APITimeoutError, RateLimitError, TimeoutError, ConnectionError)
+
+# کدهای وضعیتی که با وجود 4xx بودن موقتی‌اند و ارزش تلاش دوباره دارند.
+# (429 جداگانه با RateLimitError گرفته می‌شود.)
+_TRANSIENT_STATUS_CODES = frozenset({408})
 
 
-def with_retry(operation: Callable[[], T], attempts: int = 3, base_delay: float = 0.2) -> T:
-    last_error: BaseException | None = None
-    for attempt in range(attempts):
+def _status_code(exc: BaseException) -> int | None:
+    code = getattr(exc, "status_code", None)
+    return code if isinstance(code, int) else None
+
+
+def is_transient(exc: BaseException) -> bool:
+    """آیا این خطا موقتی است (ارزش تلاش دوباره دارد)؟"""
+    if isinstance(exc, (APIConnectionError, APITimeoutError)):
+        return True
+    if isinstance(exc, RateLimitError):
+        return True
+    if isinstance(exc, APIStatusError):
+        code = _status_code(exc) or 0
+        return code >= 500 or code in _TRANSIENT_STATUS_CODES
+    return isinstance(exc, (ConnectionError, TimeoutError))
+
+
+def _retry_after_seconds(exc: BaseException) -> float | None:
+    """اگر provider هدر ``Retry-After`` عددی داده باشد، همان را ترجیح بده.
+
+    فرم HTTP-date پشتیبانی نمی‌شود و به backoff نمایی برمی‌گردیم.
+    """
+    headers = getattr(getattr(exc, "response", None), "headers", None)
+    if not headers:
+        return None
+    try:
+        return max(0.0, float(headers.get("retry-after")))
+    except (TypeError, ValueError):
+        return None
+
+
+def _backoff_delay(attempt: int, retry_after: float | None) -> float:
+    """تأخیر نمایی با jitter؛ ``attempt`` شماره‌ی تلاشی است که شکست خورده (۱-پایه)."""
+    if retry_after is not None:
+        return min(retry_after, MODEL_RETRY_MAX_DELAY)
+    ceiling = min(MODEL_RETRY_MAX_DELAY, MODEL_RETRY_BASE_DELAY * (2 ** (attempt - 1)))
+    return random.uniform(ceiling / 2, ceiling)
+
+
+def call_with_retry(call: Callable[[], T], *, operation: str) -> T:
+    """``call`` را با backoff نمایی صدا می‌زند و در نهایت خطای اصلی را دوباره raise می‌کند.
+
+    ``operation`` فقط برای پیام لاگ است (مثلاً ``"vision"``). تعداد کل تلاش‌ها با
+    ``CATALOGYAR_MODEL_MAX_ATTEMPTS`` محدود است — retry هرگز بی‌نهایت نیست.
+    """
+    attempts = max(1, MODEL_MAX_ATTEMPTS)
+    attempt = 1
+    while True:
         try:
-            return operation()
-        except TRANSIENT_ERRORS as exc:
-            last_error = exc
-            if attempt == attempts - 1:
-                break
-            time.sleep(base_delay * (2**attempt))
-    raise last_error  # type: ignore[misc]
+            return call()
+        except Exception as exc:
+            if not is_transient(exc) or attempt >= attempts:
+                raise
+            delay = _backoff_delay(attempt, _retry_after_seconds(exc))
+            logger.warning(
+                "فراخوانی %s ناموفق بود (تلاش %d/%d): %s — تلاش دوباره پس از %.2f ثانیه",
+                operation,
+                attempt,
+                attempts,
+                exc,
+                delay,
+            )
+            sleep(delay)
+            attempt += 1
+
+
+def with_retry(operation: Callable[[], T], attempts: int | None = None, base_delay: float | None = None) -> T:
+    """سازگاری با نام قدیمی؛ تنظیمات env را ترجیح می‌دهد."""
+    del attempts, base_delay
+    return call_with_retry(operation, operation="model")

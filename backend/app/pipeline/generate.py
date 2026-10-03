@@ -5,7 +5,7 @@ from openai import OpenAI, OpenAIError
 from app.config import GENERATE_MODEL, OPENAI_API_KEY
 from app.pipeline.errors import EngineCallError, EngineNotConfiguredError
 from app.pipeline.merge import MergedEvidence
-from app.pipeline.retry import with_retry
+from app.pipeline.retry import call_with_retry
 from app.schemas.catalog import (
     Attribute,
     CatalogGenerateResponse,
@@ -77,7 +77,7 @@ def generate_catalog(
         )
 
     try:
-        response = with_retry(call_model)
+        response = call_with_retry(call_model, operation="generate")
         raw = response.choices[0].message.content or "{}"
         data = json.loads(raw)
     except (OpenAIError, json.JSONDecodeError, TypeError) as exc:

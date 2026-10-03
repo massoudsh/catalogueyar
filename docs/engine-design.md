@@ -30,10 +30,11 @@ generate.generate_catalog()  → مدل زبانی (پیش‌فرض gpt-4o-mini)
   تنظیمات: `CATALOGYAR_MODEL_MAX_ATTEMPTS` (پیش‌فرض ۳، هرگز بی‌نهایت)،
   `CATALOGYAR_MODEL_RETRY_BASE_DELAY` (۰.۵s) و `CATALOGYAR_MODEL_RETRY_MAX_DELAY` (۸s).
 - **Cache تحلیل تصویر** (issue #2، پیاده‌سازی‌شده): کلید از SHA-256 بایت‌های عکس + نام مدل + نسخه‌ی
-  schema/prompt ساخته می‌شود (`pipeline/cache.py`)، روی دیسک در `backend/.cache/image-analysis`
-  ذخیره و با TTL (`CATALOGYAR_IMAGE_CACHE_TTL_SECONDS`، پیش‌فرض ۷ روز) منقضی می‌شود. هر خطای
-  cache فقط warning است و به فراخوانی عادی مدل برمی‌گردد؛ hit/miss هم لاگ می‌شود و هم در
-  `cache.stats()` شمرده می‌شود.
+  schema/prompt ساخته می‌شود (`pipeline/cache.py`)، روی دیسک در
+  `CATALOGYAR_IMAGE_CACHE_DIR` / `CATALOGYAR_VISION_CACHE_DIR` (پیش‌فرض
+  `$CATALOGYAR_DATA_DIR/vision-cache`) ذخیره و با TTL (`CATALOGYAR_IMAGE_CACHE_TTL_SECONDS`،
+  پیش‌فرض ۷ روز) منقضی می‌شود. هر خطای cache فقط warning است و به فراخوانی عادی مدل برمی‌گردد؛
+  hit/miss هم لاگ می‌شود و هم در `cache.stats()` شمرده می‌شود.
 
 ## چرا OpenAI-compatible API
 

@@ -14,7 +14,8 @@
 - `CATALOGYAR_MODEL_RETRY_BASE_DELAY` (پیش‌فرض `0.5` ثانیه) و `CATALOGYAR_MODEL_RETRY_MAX_DELAY`
   (پیش‌فرض `8.0` ثانیه) — کف و سقف backoff نمایی.
 - `CATALOGYAR_IMAGE_CACHE_ENABLED` (پیش‌فرض `1`؛ `0` = خاموش)
-- `CATALOGYAR_IMAGE_CACHE_DIR` (پیش‌فرض `backend/.cache/image-analysis`؛ در `.gitignore` هست)
+- `CATALOGYAR_IMAGE_CACHE_DIR` یا `CATALOGYAR_VISION_CACHE_DIR` (پیش‌فرض
+  `$CATALOGYAR_DATA_DIR/vision-cache`؛ `IMAGE_CACHE_DIR` اولویت دارد)
 - `CATALOGYAR_IMAGE_CACHE_TTL_SECONDS` (پیش‌فرض `604800` = ۷ روز)
 
 نمونه در `backend/.env.example`.
