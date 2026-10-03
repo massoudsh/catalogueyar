@@ -5,10 +5,20 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import httpx
 from fastapi import HTTPException
+from openai import (
+    APIConnectionError,
+    AuthenticationError,
+    BadRequestError,
+    InternalServerError,
+    PermissionDeniedError,
+    RateLimitError,
+)
 
 from app.auth import current_seller
 from app.marketplaces import export_payload
+from app.pipeline import cache
 from app.pipeline.cache import cache_key
 from app.pipeline.errors import EngineCallError, EngineNotConfiguredError
 from app.pipeline.generate import generate_catalog
@@ -49,15 +59,7 @@ class FakeCompletions:
 
 
 class CountingCompletions(FakeCompletions):
-    """مثل FakeCompletions ولی تعداد فراخوانی مدل را می‌شمارد (برای اثبات cache hit بودن)."""
-
-    def __init__(self, content: str):
-        super().__init__(content)
-        self.calls = 0
-
-    def create(self, **kwargs):
-        self.calls += 1
-        return super().create(**kwargs)
+    """Alias صریح برای تست‌های cache — شمارش در FakeCompletions است."""
 
 
 class FlakyCompletions(FakeCompletions):
@@ -66,13 +68,12 @@ class FlakyCompletions(FakeCompletions):
     def __init__(self, content: str, error: Exception):
         super().__init__(content)
         self.error = error
-        self.calls = 0
 
     def create(self, **kwargs):
         self.calls += 1
         if self.calls == 1:
             raise self.error
-        return super().create(**kwargs)
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=self.content))])
 
 
 def _request() -> httpx.Request:
@@ -108,7 +109,9 @@ class PipelineTests(unittest.TestCase):
         fake = FakeCompletions(response)
         with tempfile.TemporaryDirectory() as cache_dir, tempfile.NamedTemporaryFile(suffix=".jpg") as image, patch(
             "app.pipeline.vision.OPENAI_API_KEY", "test-key"
-        ), patch("app.pipeline.cache.VISION_CACHE_DIR", Path(cache_dir)), patch(
+        ), patch("app.pipeline.cache.IMAGE_CACHE_DIR", cache_dir), patch(
+            "app.pipeline.cache.IMAGE_CACHE_ENABLED", True
+        ), patch(
             "app.pipeline.vision.OpenAI", return_value=SimpleNamespace(chat=SimpleNamespace(completions=fake))
         ):
             image.write(b"image")

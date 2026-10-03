@@ -26,16 +26,21 @@ generate.generate_catalog()   → JSON نهایی (+ english + تاریخچه ف
 storage.create_draft()        → SQLite
 ```
 
-- تنظیمات در `backend/app/config.py` از env.
-- بدون `OPENAI_API_KEY` → `503` (`EngineNotConfiguredError`).
-- خطای مدل / ffmpeg / publish → `502` (`EngineCallError`).
-- فایل‌های موقت و فریم‌ها در `finally` پاک می‌شوند.
-- **Retry**: `pipeline/retry.py` → `with_retry` (۳ تلاش، backoff نمایی روی خطای موقت شبکه/۴۲۹).
-- **Cache تصویر**: `pipeline/cache.py` — کلید hash محتوا، فایل JSON در `CATALOGYAR_VISION_CACHE_DIR`.
-- **Auth + rate limit**: `auth.py` با `CATALOGYAR_API_KEYS`.
-- **تاریخچه / ویرایش / feedback**: `storage.py` + endpointهای history/detail/PATCH.
-- **مارکت‌پلیس**: `marketplaces.py` — export و publish برای digikala/basalam/torob.
-- مرجع HTTP: `docs/api.md`. ویکی زنده: `docs/wiki/`.
+- تنظیمات در `backend/app/config.py` — از env vars خوانده می‌شود (`OPENAI_API_KEY` و ۳ نام مدل قابل override).
+- بدون `OPENAI_API_KEY` هر سه مرحله‌ی مدل‌محور خطای `503` با پیام روشن برمی‌گردانند (`EngineNotConfiguredError`).
+- خطای فراخوانی مدل (شبکه/format) → `502` (`EngineCallError`).
+- فایل‌های آپلودی در `tempfile` موقت ذخیره و در `finally` پاک می‌شوند.
+- **Retry/backoff** (issue #1، پیاده‌سازی‌شده): هر سه فراخوانی مدل از `pipeline/retry.py`
+  (`call_with_retry`) رد می‌شوند — فقط خطای موقت (قطعی شبکه/تایم‌اوت/`429`/`5xx`) با backoff نمایی
+  و jitter دوباره تلاش می‌شود؛ خطای `4xx` کلاینت (مثل `400`/`401`/`403`) بدون retry بالا می‌رود.
+  تنظیمات: `CATALOGYAR_MODEL_MAX_ATTEMPTS` (پیش‌فرض ۳، هرگز بی‌نهایت)،
+  `CATALOGYAR_MODEL_RETRY_BASE_DELAY` (۰.۵s) و `CATALOGYAR_MODEL_RETRY_MAX_DELAY` (۸s).
+- **Cache تحلیل تصویر** (issue #2، پیاده‌سازی‌شده): کلید از SHA-256 بایت‌های عکس + نام مدل + نسخه‌ی
+  schema/prompt ساخته می‌شود (`pipeline/cache.py`)، روی دیسک در
+  `CATALOGYAR_IMAGE_CACHE_DIR` / `CATALOGYAR_VISION_CACHE_DIR` (پیش‌فرض
+  `$CATALOGYAR_DATA_DIR/vision-cache`) ذخیره و با TTL (`CATALOGYAR_IMAGE_CACHE_TTL_SECONDS`،
+  پیش‌فرض ۷ روز) منقضی می‌شود. هر خطای cache فقط warning است و به فراخوانی عادی مدل برمی‌گردد؛
+  hit/miss هم لاگ می‌شود و هم در `cache.stats()` شمرده می‌شود.
 
 ## چرا OpenAI-compatible API
 

@@ -1,14 +1,21 @@
 import base64
 import json
+import logging
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from openai import OpenAI, OpenAIError
 
 from app.config import OPENAI_API_KEY, VISION_MODEL
-from app.pipeline.cache import cache_key, read_cache, write_cache
+from app.pipeline import cache
 from app.pipeline.errors import EngineCallError, EngineNotConfiguredError
-from app.pipeline.retry import with_retry
+from app.pipeline.retry import call_with_retry
+
+logger = logging.getLogger(__name__)
+
+# با هر تغییر معنادار در پرامپت یا ساختار خروجی این نسخه را بامپ کن؛ چون بخشی از کلید cache است،
+# ورودی‌های قدیمی خودکار miss می‌شوند.
+_ANALYSIS_CACHE_VERSION = "v1"
 
 
 @dataclass
@@ -52,10 +59,17 @@ def analyze_images(image_paths: list[str]) -> ImageAnalysis:
             "متغیر محیطی OPENAI_API_KEY تنظیم نشده — بدون کلید نمی‌توان تصویر را تحلیل کرد"
         )
 
-    key = cache_key(image_paths)
-    cached = read_cache(key)
+    # هر فایل فقط یک‌بار خوانده می‌شود: هم برای hash محتوا، هم برای ساخت data URL.
+    images = [(path, Path(path).read_bytes()) for path in image_paths]
+    key = cache.build_key(VISION_MODEL, _ANALYSIS_CACHE_VERSION, [data for _, data in images])
+
+    cached = cache.get(key)
     if cached is not None:
-        return _parse_analysis(cached)
+        try:
+            return _parse_analysis(cached)
+        except (TypeError, ValueError) as exc:
+            logger.warning("ورودی cache با schema فعلی تحلیل تصویر نمی‌خواند، نادیده گرفته شد: %s", exc)
+            cache.invalidate(key)
 
     content: list[dict] = [{"type": "text", "text": "این عکس‌های محصول را تحلیل کن."}]
     for path, data in images:
@@ -74,12 +88,12 @@ def analyze_images(image_paths: list[str]) -> ImageAnalysis:
         )
 
     try:
-        response = with_retry(call_model)
+        response = call_with_retry(call_model, operation="vision")
         raw = response.choices[0].message.content or "{}"
         data = json.loads(raw)
     except (OpenAIError, json.JSONDecodeError, OSError) as exc:
         raise EngineCallError(f"خطا در تحلیل تصویر: {exc}") from exc
 
     analysis = _parse_analysis(data)
-    write_cache(key, asdict(analysis))
+    cache.put(key, asdict(analysis))
     return analysis
