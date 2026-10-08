@@ -14,13 +14,15 @@ docs/
   wiki/                       # ویکی دانش زنده — قوانین در CLAUDE.md
 backend/
   app/
-    main.py            # FastAPI + UI استاتیک /
+    main.py            # FastAPI + UI استاتیک / + CORS فرانت
     api/catalog.py      # generate/history/edit/export/publish
     pipeline/            # video, vision, speech, merge, generate, retry, cache
     schemas/catalog.py   # مدل‌های ورودی/خروجی
     storage.py           # SQLite draft و feedback
     auth.py              # Bearer API key و rate limit
     marketplaces.py      # export/publish مارکت‌پلیس
+frontend/
+  src/                   # React + Vite + Tailwind + Zod + Framer Motion
 ```
 
 ## مستندات
@@ -32,24 +34,42 @@ backend/
 | `docs/engine-design.md` | موتور AI و checklist فیچر |
 | `docs/product-doc.md` | مسئله، بازار، نقشه راه |
 | `docs/mvp-design.md` | قرارداد JSON اولیه |
+| `frontend/README.md` | اجرای UI مدرن |
 | `CLAUDE.md` | قوانین نگهداری ویکی |
 
 `docs/wiki/` ویکی زنده است: بعد از هر تغییر معنایی در کد، صفحهٔ مرتبط را به‌روز کنید.
 
 ## وضعیت فعلی
 
-اپ FastAPI آماده است و رابط RTL روی `/` سرو می‌شود. `POST /catalog/generate` عکس یا ویدئو، ویس اختیاری، توضیح فروشنده و دسته‌های مجاز را می‌گیرد و draft ساختاریافتهٔ فارسی/انگلیسی می‌سازد. draftها در SQLite ذخیره می‌شوند؛ history، detail، edit، export و publish برای digikala/basalam/torob در دسترس‌اند. برای جزئیات HTTP ببینید `docs/api.md`.
+اپ FastAPI آماده است؛ رابط RTL استاتیک روی `/` و فرانت React در `frontend/` برای generate/edit.
+`POST /catalog/generate` عکس یا ویدئو، ویس اختیاری، توضیح فروشنده و دسته‌های مجاز را می‌گیرد و
+draft ساختاریافتهٔ فارسی/انگلیسی می‌سازد. draftها در SQLite ذخیره می‌شوند؛ history، detail،
+edit، export و publish برای digikala/basalam/torob در دسترس‌اند. برای جزئیات HTTP ببینید `docs/api.md`.
 
 ## اجرای محلی
+
+### بک‌اند
 
 ```bash
 cd backend
 cp .env.example .env   # OPENAI_API_KEY را پر کنید؛ ffmpeg برای ویدئو لازم است
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --port 8000
 ```
 
-OpenAPI تعاملی: `http://127.0.0.1:8000/docs`
+- UI استاتیک: `http://127.0.0.1:8000/`
+- OpenAPI: `http://127.0.0.1:8000/docs`
+
+### فرانت (Vite)
+
+```bash
+cd frontend
+cp .env.example .env   # پیش‌فرض API: http://127.0.0.1:8000
+npm install
+npm run dev
+```
+
+مرورگر: `http://127.0.0.1:5173` — لندینگ `/` و فضای ساخت/ویرایش `/workspace`.
 
 ## متغیرهای محیطی (خلاصه)
 
@@ -61,6 +81,8 @@ OpenAPI تعاملی: `http://127.0.0.1:8000/docs`
 | `CATALOGYAR_IMAGE_CACHE_*` / `CATALOGYAR_VISION_CACHE_DIR` | cache تحلیل تصویر (enable، dir، TTL) |
 | `CATALOGYAR_MODEL_MAX_ATTEMPTS` / `…_RETRY_*_DELAY` | retry/backoff فراخوانی مدل |
 | `CATALOGYAR_API_KEYS` / `CATALOGYAR_RATE_LIMIT_PER_MINUTE` | auth seller-scoped + rate limit |
+| `CATALOGYAR_CORS_ORIGINS` | origins مجاز برای فرانت Vite (پیش‌فرض `:5173`) |
 | `DIGIKALA_*` / `BASALAM_*` / `TOROB_*` | URL/token انتشار مارکت‌پلیس |
+| `VITE_API_BASE_URL` / `VITE_API_KEY` | فرانت → آدرس API و Bearer اختیاری |
 
-جزئیات کامل: `backend/.env.example` و `docs/wiki/concepts/engine-config.md`.
+جزئیات کامل: `backend/.env.example`، `frontend/.env.example` و `docs/wiki/concepts/engine-config.md`.

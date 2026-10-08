@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Fraunces", "Vazirmatn", serif;
+  --font-body: "Vazirmatn", sans-serif;
+
+  --color-ink: #102a29;
+  --color-ink-soft: #243b3a;
+  --color-mist: #e7f0ee;
+  --color-mist-deep: #d3e4e0;
+  --color-teal: #0f5c56;
+  --color-teal-bright: #147a72;
+  --color-saffron: #e8a317;
+  --color-saffron-soft: #f2c14e;
+  --color-clay: #c45c26;
+  --color-paper: #f7faf9;
+  --color-line: #b7cdc8;
+  --color-warn: #b45309;
+  --color-ok: #0f766e;
+  --color-danger: #b42318;
+}
+
+@layer base {
+  :root {
+    color: var(--color-ink);
+    background: var(--color-mist);
+    font-family: var(--font-body);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  button,
+  input,
+  textarea {
+    font: inherit;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-saffron) 45%, white);
+    color: var(--color-ink);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .atmosphere {
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(242, 193, 78, 0.28), transparent 55%),
+      radial-gradient(900px 500px at 10% 20%, rgba(15, 92, 86, 0.18), transparent 50%),
+      linear-gradient(160deg, #eef5f3 0%, #dcebe7 42%, #e8f1ee 100%);
+  }
+
+  .atmosphere-grid {
+    background-image:
+      linear-gradient(rgba(16, 42, 41, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(16, 42, 41, 0.045) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+  }
+}

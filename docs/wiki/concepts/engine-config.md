@@ -16,6 +16,8 @@
 - `CATALOGYAR_IMAGE_CACHE_DIR` یا `CATALOGYAR_VISION_CACHE_DIR` (پیش‌فرض
   `$CATALOGYAR_DATA_DIR/vision-cache`؛ `IMAGE_CACHE_DIR` اولویت دارد)
 - `CATALOGYAR_IMAGE_CACHE_TTL_SECONDS` (پیش‌فرض `604800` = ۷ روز)
+- `CATALOGYAR_CORS_ORIGINS` (پیش‌فرض `http://127.0.0.1:5173,http://localhost:5173`) —
+  origins مجاز برای فرانت Vite در `backend/app/main.py` ([[entities/frontend-app]]).
 
 نمونه در `backend/.env.example`.
 
