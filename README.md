@@ -14,7 +14,7 @@ docs/
   wiki/                       # ویکی دانش زنده — قوانین در CLAUDE.md
 backend/
   app/
-    main.py            # FastAPI + UI استاتیک / + CORS فرانت
+    main.py            # FastAPI، API و سرو خروجی Vite در production
     api/catalog.py      # generate/history/edit/export/publish
     pipeline/            # video, vision, speech, merge, generate, retry, cache
     schemas/catalog.py   # مدل‌های ورودی/خروجی
@@ -41,7 +41,7 @@ frontend/
 
 ## وضعیت فعلی
 
-اپ FastAPI آماده است؛ رابط RTL استاتیک روی `/` و فرانت React در `frontend/` برای generate/edit.
+اپ FastAPI به‌همراه رابط React/Vite آماده است. در production، FastAPI خروجی build‌شدهٔ `frontend/dist` را روی `/` سرو می‌کند.
 `POST /catalog/generate` عکس یا ویدئو، ویس اختیاری، توضیح فروشنده و دسته‌های مجاز را می‌گیرد و
 draft ساختاریافتهٔ فارسی/انگلیسی می‌سازد. draftها در SQLite ذخیره می‌شوند؛ history، detail،
 edit، export و publish برای digikala/basalam/torob در دسترس‌اند. برای جزئیات HTTP ببینید `docs/api.md`.
@@ -57,19 +57,19 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-- UI استاتیک: `http://127.0.0.1:8000/`
+- پس از build فرانت، رابط: `http://127.0.0.1:8000/`
 - OpenAPI: `http://127.0.0.1:8000/docs`
 
 ### فرانت (Vite)
 
 ```bash
 cd frontend
-cp .env.example .env   # پیش‌فرض API: http://127.0.0.1:8000
+cp .env.example .env   # برای deployment same-origin خالی بگذارید
 npm install
-npm run dev
+npm run build
 ```
 
-مرورگر: `http://127.0.0.1:5173` — لندینگ `/` و فضای ساخت/ویرایش `/workspace`.
+خروجی `frontend/dist` توسط FastAPI روی `/` سرو می‌شود. برای توسعهٔ محلی به‌جای build، `npm run dev` را اجرا کنید؛ لندینگ `/` و فضای ساخت/ویرایش `/workspace` هستند.
 
 ## متغیرهای محیطی (خلاصه)
 

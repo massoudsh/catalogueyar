@@ -5,7 +5,7 @@
 ## پیش‌نیاز
 
 - Node.js 20+
-- بک‌اند در حال اجرا روی `http://127.0.0.1:8000` (پیش‌فرض)
+- بک‌اند در حال اجرا روی `http://127.0.0.1:8000` برای development proxy
 
 ## اجرا
 
@@ -31,10 +31,10 @@ uvicorn app.main:app --reload --port 8000
 
 | متغیر | توضیح |
 |---|---|
-| `VITE_API_BASE_URL` | آدرس API — پیش‌فرض `http://127.0.0.1:8000` |
+| `VITE_API_BASE_URL` | آدرس API جداگانه؛ خالی یعنی همان origin (پیش‌فرض) یا proxy توسعهٔ Vite |
 | `VITE_API_KEY` | Bearer اختیاری وقتی `CATALOGYAR_API_KEYS` روی بک‌اند ست است |
 
-Vite همچنین `/catalog` و `/health` را به بک‌اند پروکسی می‌کند؛ اگر `VITE_API_BASE_URL` را خالی بگذاری و کد را طوری تغییر دهی که از relative URL استفاده کند، پروکسی فعال می‌شود. پیکربندی فعلی به‌صورت پیش‌فرض به `127.0.0.1:8000` می‌زند و CORS روی بک‌اند اجازهٔ origin فرانت را می‌دهد.
+Vite در development مسیرهای `/catalog` و `/health` را به بک‌اند proxy می‌کند. در production، ابتدا `npm run build` را اجرا کنید و FastAPI خروجی `frontend/dist` را در همان origin سرو می‌کند؛ در نتیجه لازم نیست `VITE_API_BASE_URL` تنظیم شود.
 
 ## صفحات
 
