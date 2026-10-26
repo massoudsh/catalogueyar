@@ -16,11 +16,11 @@ Authorization: Bearer <api_key>
 ## Health و UI
 | روش | مسیر | توضیح |
 |---|---|---|
-| GET | `/` | رابط RTL استاتیک |
+| GET | `/` و `/workspace` | رابط React/Vite از `frontend/dist`؛ بدون build: `503` |
 | GET | `/health` | `{"status":"ok"}` |
 
-فرانت مدرن React در پوشهٔ `frontend/` روی پورت Vite (`5173`) اجرا می‌شود و به همین API
-وصل است. CORS با `CATALOGYAR_CORS_ORIGINS` (پیش‌فرض `http://127.0.0.1:5173,http://localhost:5173`)
+React/Vite در production از همان origin API سرو می‌شود؛ asset یا مسیر ناشناخته `404` است، نه HTML لندینگ. در توسعه، Vite روی `5173` مسیرهای `/catalog` و `/health` را proxy می‌کند.
+CORS با `CATALOGYAR_CORS_ORIGINS` (پیش‌فرض `http://127.0.0.1:5173,http://localhost:5173`)
 فعال است. راهنما: `frontend/README.md`.
 
 ## کاتالوگ
@@ -37,6 +37,9 @@ Multipart form:
 
 پاسخ: `CatalogGenerateResponse` (عنوان، دسته، توضیح، attributes، variants،
 `missing_info_questions`، `source_evidence`، `english`، و `draft_id` برای ویرایش بعدی).
+سه فیلد محتوایی نیز برمی‌گردند: `short_description` (رشته)، `seo_keywords` (آرایهٔ رشته) و
+`faqs` (آرایهٔ `{question, answer}`). برای draftهای قدیمی، مقدار پیش‌فرض رشتهٔ خالی و آرایه‌های خالی است.
+این محتوا از مدل است و پیش از انتشار باید بازبینی شود؛ تضمین صحت یا رتبهٔ SEO نیست.
 اگر `store_category_list` داده شود، `category.suggested` حتماً یکی از همان‌ها خواهد بود.
 Draft هم‌زمان در SQLite ذخیره می‌شود؛ اصلاح‌های PATCH قبلی فروشنده وارد پرامپت generate می‌شوند.
 
@@ -50,11 +53,13 @@ Draft هم‌زمان در SQLite ذخیره می‌شود؛ اصلاح‌های
 
 ### `PATCH /catalog/{draft_id}`
 بدنهٔ JSON جزئی (`CatalogUpdate`): هر یک از `title`, `description`, `category`, `attributes`,
-`variants`, `missing_info_questions`, `english`. تغییرات در جدول feedback ثبت می‌شود.
+`variants`, `missing_info_questions`, `english`, `short_description`, `seo_keywords`, `faqs`.
+تغییرات پس از اعتبارسنجی مدل‌های تو‌در‌تو در جدول feedback ثبت می‌شود؛ FAQ بدون `question` یا `answer` به `422` می‌انجامد.
 
 ### `GET /catalog/{draft_id}/export/{marketplace}`
 `marketplace` ∈ `digikala` | `basalam` | `torob`.  
-برمی‌گرداند payload JSON بدون تماس بیرونی. نام ناشناخته → `400`.
+برمی‌گرداند payload JSON شامل محتوای SEO/FAQ بدون تماس بیرونی. نام ناشناخته → `400`.
+فرمت خروجی برای هر سه نام یکسان و عمومی است؛ سازگاری با API رسمی بازارگاه‌ها تضمین نشده و به آداپتر سفارشی نیاز دارد.
 
 ### `POST /catalog/{draft_id}/publish/{marketplace}`
 همان payload را به URL/token تنظیم‌شده در env POST می‌کند.  

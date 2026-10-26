@@ -5,7 +5,7 @@
 ## مسئولیت‌ها
 - `generate_catalog(evidence, category_list=None, history=None, feedback=None) -> CatalogGenerateResponse`
 - `enforce_category(category, category_list)` — اجبار عضویت در لیست مجاز
-- عنوان، دسته، توضیح، ویژگی‌ها، واریانت‌ها، سؤالات تکمیلی، `source_evidence` و `english`.
+- عنوان، دسته، توضیح، ویژگی‌ها، واریانت‌ها، سؤالات تکمیلی، `source_evidence` و `english`؛ همچنین `short_description`، `seo_keywords` و `faqs` فقط بر اساس شواهد.
 
 ## وابستگی‌ها
 - [[concepts/catalog-pipeline]] — آخرین مرحلهٔ مدل‌محور قبل از store
@@ -20,8 +20,9 @@
   در غیر این صورت اولین گزینه + confidence ≤ ۰.۳۵).
 - اگر `history` بیاید، عنوان و دستهٔ چند draft اخیر به پرامپت اضافه می‌شود.
 - اگر `feedback` بیاید، اصلاح‌های PATCH اخیر به‌صورت راهنمای سبک به پرامپت اضافه می‌شود.
-- JSON نامعتبر یا خطای مدل → `EngineCallError`؛ بدون کلید → `EngineNotConfiguredError`.
+- JSON نامعتبر، ریشهٔ غیر-object، FAQ ناقص، نوع نامعتبر کلیدواژه یا خطای مدل → `EngineCallError`؛ بدون کلید → `EngineNotConfiguredError`.
 - cache ندارد (ورودی متنی؛ تکرار یکسان کم است).
 
 ## منابع کد
-- `backend/app/pipeline/generate.py` — `generate_catalog`, `enforce_category`
+- `backend/app/pipeline/generate.py:87` — `generate_catalog`
+- `backend/app/pipeline/generate.py:68` — `enforce_category`

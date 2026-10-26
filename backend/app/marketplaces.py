@@ -14,6 +14,9 @@ def export_payload(marketplace: str, catalog: CatalogGenerateResponse) -> dict:
     return {
         "title": catalog.title,
         "description": catalog.description,
+        "short_description": catalog.short_description,
+        "seo_keywords": catalog.seo_keywords,
+        "faqs": [item.model_dump() for item in catalog.faqs],
         "category": catalog.category.suggested,
         "attributes": [attribute.model_dump() for attribute in catalog.attributes],
         "variants": [variant.model_dump() for variant in catalog.variants],

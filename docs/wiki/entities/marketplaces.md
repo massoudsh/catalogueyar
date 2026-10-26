@@ -3,8 +3,8 @@
 > تبدیل کاتالوگ داخلی به payload مارکت‌پلیس و انتشار HTTP اختیاری.
 
 ## مسئولیت‌ها
-- `export_payload(marketplace, catalog)` — dict استاندارد: title, description, category,
-  attributes, variants, english.
+- `export_payload(marketplace, catalog)` — dict عمومی: title, description, category,
+  attributes, variants, english, short_description, seo_keywords, faqs. ساختار هر سه بازارگاه یکسان و مخصوص اتصال سفارشی است؛ آداپتر رسمی/تأییدشده یا تضمین پذیرش نیست.
 - `publish(marketplace, catalog)` — POST JSON به URL تنظیم‌شده در env با Bearer token اختیاری.
 - مارکت‌پلیس‌های پشتیبانی‌شده: `digikala`, `basalam`, `torob` (`SUPPORTED_MARKETPLACES`).
 
@@ -21,5 +21,5 @@
 - timeout پیش‌فرض ۱۲ ثانیه (`CATALOGYAR_REQUEST_TIMEOUT_SECONDS`).
 
 ## منابع کد
-- `backend/app/marketplaces.py`
+- `backend/app/marketplaces.py:11` — export عمومی شامل SEO/FAQ
 - `backend/app/config.py` — نگاشت env به digikala/basalam/torob

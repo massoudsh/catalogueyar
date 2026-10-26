@@ -5,7 +5,7 @@
 ## مسئولیت‌ها
 - `create_draft(seller_id, catalog)` — UUID + INSERT در جدول `drafts`.
 - `get_draft` / `list_drafts` — خواندن scoped به seller (لیست حداکثر ۲۰، جدیدترین اول).
-- `update_draft` — اعمال `CatalogUpdate`، به‌روزرسانی `updated_at`، INSERT در `feedback`.
+- `update_draft` — اعمال `CatalogUpdate` و اعتبارسنجی مجدد `CatalogGenerateResponse` برای حفظ مدل‌های تو‌در‌تو (از جمله FAQ/category/attributes)، به‌روزرسانی `updated_at` و INSERT در `feedback`؛ شامل فیلدهای SEO/FAQ بدون migration جدول.
 - `seller_context(seller_id, limit=5)` — آخرین کاتالوگ‌های فروشنده برای پرامپت generate
   ([[entities/generate]]).
 - `recent_feedback(seller_id, limit=8)` — آخرین تغییرات PATCH برای یادگیری سبک در generate.
@@ -22,4 +22,4 @@
 - feedback فقط تغییرات PATCH را JSON می‌کند؛ `recent_feedback` همان‌ها را به پرامپت generate می‌دهد.
 
 ## منابع کد
-- `backend/app/storage.py`
+- `backend/app/storage.py:48` — PATCH و اعتبارسنجی مجدد مدل

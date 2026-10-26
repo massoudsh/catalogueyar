@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import httpx
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 from openai import (
     APIConnectionError,
     AuthenticationError,
@@ -17,6 +18,7 @@ from openai import (
 )
 
 from app.auth import current_seller
+from app.main import app
 from app.marketplaces import export_payload
 from app.pipeline import cache
 from app.pipeline.cache import cache_key
@@ -546,6 +548,135 @@ class ImageCacheTests(unittest.TestCase):
             for name in cache._COUNTERS:
                 cache._COUNTERS[name] = 0
         self.assertEqual(cache.stats()["hits"], 1)
+
+
+class CatalogWorkspaceTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[2])
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        self.catalog = CatalogGenerateResponse.model_validate_json(_CATALOG_JSON)
+        self.catalog.short_description = "کیف مشکی"
+        self.catalog.seo_keywords = ["کیف", "مشکی"]
+        self.client = TestClient(app)
+        self.addCleanup(self.client.close)
+        app.dependency_overrides[current_seller] = lambda: "seller"
+        self.addCleanup(app.dependency_overrides.pop, current_seller)
+        for target, value in (
+            ("app.storage.DATABASE_PATH", self.root / "db.sqlite3"),
+            ("app.main.FRONTEND_DIST_DIR", self.root / "dist"),
+        ):
+            patcher = patch(target, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_generate_parses_seo_and_faqs(self):
+        data = self.catalog.model_dump()
+        data["faqs"] = [{"question": "رنگ کیف چیست؟", "answer": "مشکی"}]
+        fake = FakeCompletions(json.dumps(data))
+        with patch("app.pipeline.generate.OPENAI_API_KEY", "test-key"), patch(
+            "app.pipeline.generate.OpenAI", return_value=SimpleNamespace(chat=SimpleNamespace(completions=fake))
+        ):
+            result = generate_catalog(MergedEvidence(detected_type="کیف", colors=["مشکی"]))
+        self.assertEqual(result.short_description, "کیف مشکی")
+        self.assertEqual(result.seo_keywords, ["کیف", "مشکی"])
+        self.assertEqual(result.faqs[0].answer, "مشکی")
+
+    def test_generate_endpoint_persists_content_fields(self):
+        data = self.catalog.model_dump()
+        data["faqs"] = [{"question": "رنگ؟", "answer": "مشکی"}]
+        fake = FakeCompletions(json.dumps(data))
+        with patch("app.pipeline.generate.OPENAI_API_KEY", "test-key"), patch(
+            "app.pipeline.generate.OpenAI", return_value=SimpleNamespace(chat=SimpleNamespace(completions=fake))
+        ), patch("app.api.catalog.analyze_images", return_value=ImageAnalysis("کیف", ["مشکی"], None, [])):
+            response = self.client.post("/catalog/generate", files={"images": ("bag.jpg", b"image", "image/jpeg")})
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["faqs"][0]["answer"], "مشکی")
+        stored = get_draft("seller", payload["draft_id"])
+        self.assertEqual(stored.catalog.short_description, "کیف مشکی")
+        self.assertEqual(stored.catalog.seo_keywords, ["کیف", "مشکی"])
+
+    def test_malformed_generated_content_is_reported_as_engine_error(self):
+        for data in ([], {"faqs": [{"question": "رنگ؟"}]}, {"seo_keywords": "not-a-list"}):
+            with self.subTest(data=data), patch("app.pipeline.generate.OPENAI_API_KEY", "test-key"), patch(
+                "app.pipeline.generate.OpenAI",
+                return_value=SimpleNamespace(chat=SimpleNamespace(completions=FakeCompletions(json.dumps(data)))),
+            ):
+                with self.assertRaises(EngineCallError):
+                    generate_catalog(MergedEvidence(detected_type="کیف"))
+
+    def test_old_catalogs_default_to_empty_content_fields(self):
+        catalog = CatalogGenerateResponse.model_validate_json(_CATALOG_JSON)
+        self.assertEqual(catalog.short_description, "")
+        self.assertEqual(catalog.seo_keywords, [])
+        self.assertEqual(catalog.faqs, [])
+
+    def test_patch_nested_fields_remain_models_and_export_correctly(self):
+        draft = create_draft("seller", self.catalog)
+        response = self.client.patch(f"/catalog/{draft.id}", json={
+            "short_description": "کیف دست‌دوز مشکی",
+            "seo_keywords": ["کیف دست‌دوز"],
+            "category": {"suggested": "اکسسوری", "confidence": 1},
+            "attributes": [{"name": "رنگ", "value": "مشکی", "confidence": 1}],
+            "faqs": [{"question": "رنگ؟", "answer": "مشکی"}],
+        })
+        self.assertEqual(response.status_code, 200)
+        stored = get_draft("seller", draft.id)
+        self.assertEqual(stored.catalog.faqs[0].answer, "مشکی")
+        for marketplace in ("digikala", "basalam", "torob"):
+            with self.subTest(marketplace=marketplace):
+                exported = self.client.get(f"/catalog/{draft.id}/export/{marketplace}")
+                self.assertEqual(exported.status_code, 200)
+                payload = exported.json()
+                self.assertEqual(payload["category"], "اکسسوری")
+                self.assertEqual(payload["attributes"][0]["value"], "مشکی")
+                self.assertEqual(payload["short_description"], "کیف دست‌دوز مشکی")
+                self.assertEqual(payload["seo_keywords"], ["کیف دست‌دوز"])
+                self.assertEqual(payload["faqs"], [{"question": "رنگ؟", "answer": "مشکی"}])
+        self.assertEqual(recent_feedback("seller")[0]["seo_keywords"], ["کیف دست‌دوز"])
+
+    def test_export_rejects_unknown_marketplace(self):
+        draft = create_draft("seller", self.catalog)
+        self.assertEqual(self.client.get(f"/catalog/{draft.id}/export/unknown").status_code, 400)
+
+    def test_other_seller_cannot_read_edit_or_export(self):
+        draft = create_draft("other-seller", self.catalog)
+        self.assertEqual(self.client.get(f"/catalog/{draft.id}").status_code, 404)
+        self.assertEqual(self.client.patch(f"/catalog/{draft.id}", json={"title": "changed"}).status_code, 404)
+        self.assertEqual(self.client.get(f"/catalog/{draft.id}/export/basalam").status_code, 404)
+        self.assertEqual(self.client.get("/catalog/history").json(), [])
+
+    def test_invalid_faq_is_rejected_at_api_boundary(self):
+        draft = create_draft("seller", self.catalog)
+        response = self.client.patch(f"/catalog/{draft.id}", json={"faqs": [{"question": "رنگ؟"}]})
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(get_draft("seller", draft.id).catalog.faqs, [])
+
+    def test_missing_frontend_build_does_not_hide_api_routes(self):
+        self.assertEqual(self.client.get("/").status_code, 503)
+        self.assertEqual(self.client.get("/workspace").status_code, 503)
+        self.assertEqual(self.client.get("/health").json(), {"status": "ok"})
+        self.assertEqual(self.client.get("/catalog/history").status_code, 200)
+        self.assertEqual(self.client.post("/catalog/generate").status_code, 422)
+        self.assertEqual(self.client.get("/assets/missing.js").status_code, 404)
+
+    def test_spa_assets_unknown_routes_and_path_escape(self):
+        dist = self.root / "dist"
+        dist.mkdir()
+        (dist / "index.html").write_text("<html>app</html>", encoding="utf-8")
+        (dist / "app.js").write_text("const app = true;", encoding="utf-8")
+        outside = self.root / "outside.txt"
+        outside.write_text("outside", encoding="utf-8")
+        (dist / "escape.txt").symlink_to(outside)
+        self.assertEqual(self.client.get("/").text, "<html>app</html>")
+        self.assertEqual(self.client.get("/workspace").text, "<html>app</html>")
+        asset = self.client.get("/app.js")
+        self.assertEqual(asset.status_code, 200)
+        self.assertIn("javascript", asset.headers["content-type"])
+        for path in ("/app-missing.js", "/unknown", "/catalog/unknown/route", "/escape.txt", "/%2e%2e/outside.txt"):
+            with self.subTest(path=path):
+                self.assertEqual(self.client.get(path).status_code, 404)
 
 
 if __name__ == "__main__":

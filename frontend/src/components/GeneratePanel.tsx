@@ -73,7 +73,7 @@ export function GeneratePanel({ busy, onSubmit }: GeneratePanelProps) {
         </p>
       </div>
 
-      <label className="group flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-teal/35 bg-mist/60 px-4 py-10 text-center transition hover:border-teal hover:bg-mist-deep/50">
+      <label className="group flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-teal/35 bg-mist/60 px-4 py-10 text-center transition hover:border-teal hover:bg-mist-deep/50 focus-within:outline-2 focus-within:outline-teal">
         <input
           type="file"
           accept="image/*,video/*"
@@ -81,8 +81,9 @@ export function GeneratePanel({ busy, onSubmit }: GeneratePanelProps) {
           className="sr-only"
           disabled={busy}
           onChange={(event) => {
-            const files = [...(event.target.files ?? [])].slice(0, 5);
+            const files = [...(event.target.files ?? [])];
             setImages(files);
+            setLocalError(files.length > 5 ? "حداکثر ۵ رسانه مجاز است؛ فایل‌های اضافی را حذف کن." : null);
           }}
         />
         <span className="mb-2 flex size-11 items-center justify-center rounded-full bg-teal/10 text-2xl font-light text-teal transition group-hover:bg-teal group-hover:text-paper">
@@ -95,8 +96,17 @@ export function GeneratePanel({ busy, onSubmit }: GeneratePanelProps) {
 
       {images.length > 0 && (
         <ul className="mt-3 space-y-1 text-xs text-ink-soft/75">
-          {images.map((file) => (
-            <li key={`${file.name}-${file.size}`}>{file.name}</li>
+          {images.map((file, index) => (
+            <li key={`${file.name}-${file.size}-${index}`} className="flex items-center justify-between gap-2">
+              <span className="min-w-0 truncate" dir="auto">{file.name}</span>
+              <button type="button" disabled={busy} aria-label={`حذف ${file.name}`}
+                onClick={() => {
+                  const remaining = images.filter((_, i) => i !== index);
+                  setImages(remaining);
+                  setLocalError(remaining.length > 5 ? "حداکثر ۵ رسانه مجاز است؛ فایل‌های اضافی را حذف کن." : null);
+                }}
+                className="shrink-0 rounded-lg px-2 py-1 text-danger hover:bg-danger/10 disabled:opacity-50">حذف</button>
+            </li>
           ))}
         </ul>
       )}

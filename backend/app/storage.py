@@ -50,7 +50,7 @@ def update_draft(seller_id: str, draft_id: str, update: CatalogUpdate) -> Catalo
     if current is None:
         return None
     changes = update.model_dump(exclude_none=True)
-    catalog = current.catalog.model_copy(update=changes)
+    catalog = CatalogGenerateResponse.model_validate({**current.catalog.model_dump(), **changes})
     timestamp = _now()
     with _connect() as connection:
         connection.execute("UPDATE drafts SET catalog = ?, updated_at = ? WHERE id = ? AND seller_id = ?", (catalog.model_dump_json(), timestamp, draft_id, seller_id))

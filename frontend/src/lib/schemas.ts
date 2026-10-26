@@ -28,10 +28,18 @@ export const EnglishCatalogSchema = z.object({
   attributes: z.array(AttributeSchema).default([]),
 });
 
+export const FAQItemSchema = z.object({
+  question: z.string(),
+  answer: z.string(),
+});
+
 export const CatalogGenerateResponseSchema = z.object({
   title: z.string(),
   category: CategorySchema,
   description: z.string(),
+  short_description: z.string().default(""),
+  seo_keywords: z.array(z.string()).default([]),
+  faqs: z.array(FAQItemSchema).default([]),
   attributes: z.array(AttributeSchema),
   variants: z.array(VariantSchema),
   missing_info_questions: z.array(z.string()),
@@ -51,12 +59,20 @@ export const CatalogDraftSchema = z.object({
 export const CatalogUpdateSchema = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
+  short_description: z.string().optional(),
+  seo_keywords: z.array(z.string()).optional(),
+  faqs: z.array(FAQItemSchema).optional(),
   category: CategorySchema.optional(),
   attributes: z.array(AttributeSchema).optional(),
   variants: z.array(VariantSchema).optional(),
   missing_info_questions: z.array(z.string()).optional(),
   english: EnglishCatalogSchema.optional(),
 });
+
+export const MarketplaceExportSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+}).passthrough();
 
 export const HealthSchema = z.object({
   status: z.string(),

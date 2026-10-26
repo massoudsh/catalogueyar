@@ -8,7 +8,7 @@
 - `GET /catalog/history` — لیست draftهای فروشندهٔ فعلی.
 - `GET /catalog/{draft_id}` — جزئیات یک draft.
 - `PATCH /catalog/{draft_id}` — ویرایش جزئی فیلدها (`CatalogUpdate`) و ثبت feedback.
-- `GET /catalog/{draft_id}/export/{marketplace}` — payload آمادهٔ انتشار بدون HTTP بیرونی.
+- `GET /catalog/{draft_id}/export/{marketplace}` — JSON عمومی برای اتصال سفارشی (شامل SEO/FAQ) بدون HTTP بیرونی و بدون تضمین سازگاری با API رسمی بازارگاه.
 - `POST /catalog/{draft_id}/publish/{marketplace}` — ارسال به endpoint مارکت‌پلیس
   ([[entities/marketplaces]]).
 - همه endpointها از `Depends(current_seller)` ([[entities/auth]]) عبور می‌کنند.
@@ -30,4 +30,5 @@
 
 ## منابع کد
 - `backend/app/api/catalog.py` — همه routeها
-- `backend/app/main.py` — mount router + UI استاتیک `/` + CORS برای [[entities/frontend-app]]
+- `backend/app/main.py:35` — ثبت استاندارد `include_router` با پشتیبانی dependency overrideها
+- `backend/app/main.py:43` — سرو Vite با fallback محدود به مسیرهای SPA، محافظت از مسیر فایل و `404` برای asset/API ناموجود

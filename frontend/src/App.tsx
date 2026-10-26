@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { MotionConfig } from "framer-motion";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Atmosphere } from "./components/Atmosphere";
 import { SiteHeader } from "./components/SiteHeader";
@@ -21,13 +22,15 @@ export function App() {
 
   return (
     <BrowserRouter>
-      <Atmosphere>
-        <SiteHeader apiOnline={apiOnline} />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/workspace" element={<WorkspacePage />} />
-        </Routes>
-      </Atmosphere>
+      <MotionConfig reducedMotion="user">
+        <Atmosphere>
+          <SiteHeader apiOnline={apiOnline} />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/workspace" element={<WorkspacePage />} />
+          </Routes>
+        </Atmosphere>
+      </MotionConfig>
     </BrowserRouter>
   );
 }

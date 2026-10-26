@@ -20,7 +20,9 @@ export function WorkspacePage() {
   const [catalog, setCatalog] = useState<CatalogGenerateResponse | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [history, setHistory] = useState<CatalogDraft[]>([]);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [status, setStatus] = useState<{
     message: string;
     tone: "neutral" | "ok" | "error" | "warn";
@@ -33,8 +35,9 @@ export function WorkspacePage() {
     try {
       const drafts = await listHistory();
       setHistory(drafts);
-    } catch {
-      /* history is optional for first-run UX */
+      setHistoryError(null);
+    } catch (error) {
+      setHistoryError(error instanceof ApiError ? error.message : "دریافت تاریخچه ناموفق بود؛ دوباره تلاش کن.");
     }
   }, []);
 
@@ -43,6 +46,7 @@ export function WorkspacePage() {
   }, [refreshHistory]);
 
   async function handleGenerate(payload: GenerateSubmitPayload) {
+    if (hasUnsavedChanges && !window.confirm("اصلاحات ذخیره‌نشده کنار گذاشته شوند؟")) return;
     setBusy(true);
     setStatus({ message: "در حال تولید کاتالوگ…", tone: "neutral" });
     try {
@@ -65,7 +69,7 @@ export function WorkspacePage() {
       const message =
         error instanceof ApiError
           ? error.message
-          : "ارتباط با سرور برقرار نشد. بک‌اند را روی پورت ۸۰۰۰ اجرا کن.";
+          : "ارتباط با سرور برقرار نشد. اتصال اینترنت را بررسی و دوباره تلاش کن.";
       setStatus({ message, tone: "error" });
     } finally {
       setBusy(false);
@@ -80,6 +84,9 @@ export function WorkspacePage() {
       const updated = await updateDraft(draftId, {
         title: next.title,
         description: next.description,
+        short_description: next.short_description,
+        seo_keywords: next.seo_keywords,
+        faqs: next.faqs,
         category: next.category,
         attributes: next.attributes,
         variants: next.variants,
@@ -97,13 +104,13 @@ export function WorkspacePage() {
       const message =
         error instanceof ApiError ? error.message : "ذخیرهٔ اصلاحات ناموفق بود.";
       setStatus({ message, tone: "error" });
-      throw error;
     } finally {
       setBusy(false);
     }
   }
 
   async function handleSelectDraft(draft: CatalogDraft) {
+    if (hasUnsavedChanges && !window.confirm("اصلاحات ذخیره‌نشده کنار گذاشته شوند؟")) return;
     setBusy(true);
     setStatus({ message: "در حال بارگذاری draft…", tone: "neutral" });
     try {
@@ -145,6 +152,7 @@ export function WorkspacePage() {
           <GeneratePanel busy={busy} onSubmit={handleGenerate} />
           <HistoryList
             drafts={history}
+            error={historyError}
             activeId={draftId}
             onSelect={(draft) => void handleSelectDraft(draft)}
             onRefresh={() => void refreshHistory()}
@@ -156,6 +164,7 @@ export function WorkspacePage() {
           draftId={draftId}
           busy={busy}
           onSave={handleSave}
+          onDirtyChange={setHasUnsavedChanges}
         />
       </div>
     </main>

@@ -12,6 +12,11 @@ class Variant(BaseModel):
     options: list[str]
 
 
+class FAQItem(BaseModel):
+    question: str
+    answer: str
+
+
 class SourceEvidence(BaseModel):
     from_image: list[str] = []
     from_voice: list[str] = []
@@ -29,15 +34,13 @@ class EnglishCatalog(BaseModel):
     attributes: list[Attribute] = []
 
 
-class CatalogGenerateRequest(BaseModel):
-    seller_hint: str | None = None
-    store_category_list: list[str] | None = None
-
-
 class CatalogGenerateResponse(BaseModel):
     title: str
     category: Category
     description: str
+    short_description: str = ""
+    seo_keywords: list[str] = []
+    faqs: list[FAQItem] = []
     attributes: list[Attribute]
     variants: list[Variant]
     missing_info_questions: list[str]
@@ -58,13 +61,11 @@ class CatalogDraft(BaseModel):
 class CatalogUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
+    short_description: str | None = None
+    seo_keywords: list[str] | None = None
+    faqs: list[FAQItem] | None = None
     category: Category | None = None
     attributes: list[Attribute] | None = None
     variants: list[Variant] | None = None
     missing_info_questions: list[str] | None = None
     english: EnglishCatalog | None = None
-
-
-class MarketplacePayload(BaseModel):
-    marketplace: str
-    payload: dict

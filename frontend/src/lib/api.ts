@@ -3,6 +3,7 @@ import {
   CatalogDraftSchema,
   CatalogGenerateResponseSchema,
   HealthSchema,
+  MarketplaceExportSchema,
   type CatalogDraft,
   type CatalogGenerateResponse,
   type CatalogUpdate,
@@ -105,6 +106,16 @@ export async function getDraft(draftId: string): Promise<CatalogDraft> {
     `/catalog/${draftId}`,
     { method: "GET", headers: authHeaders() },
     (raw) => CatalogDraftSchema.parse(raw),
+  );
+}
+
+export type Marketplace = "digikala" | "basalam" | "torob";
+
+export async function exportCatalog(draftId: string, marketplace: Marketplace) {
+  return request(
+    `/catalog/${encodeURIComponent(draftId)}/export/${marketplace}`,
+    { method: "GET", headers: authHeaders() },
+    (raw) => MarketplaceExportSchema.parse(raw),
   );
 }
 

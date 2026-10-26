@@ -1,16 +1,15 @@
 # Overview — کاتالوگ‌یار (CatalogYar)
 
 دستیار هوشمند ساخت کاتالوگ محصول: فروشنده به‌جای پرکردن فرم، عکس/ویدئو/ویس محصول را می‌فرستد
-و سیستم خروجی ساختاریافته‌ی کاتالوگ (عنوان، دسته‌بندی، توضیح، ویژگی‌ها، واریانت‌ها، نسخه‌ی انگلیسی)
-را تولید می‌کند. رابط RTL استاتیک روی `/` سرو می‌شود؛ فرانت مدرن React در `frontend/`
-(Vite، مسیرهای `/` و `/workspace`).
+و سیستم خروجی ساختاریافته‌ی کاتالوگ (عنوان، دسته‌بندی، توضیح، ویژگی‌ها، واریانت‌ها، نسخه‌ی انگلیسی و SEO/FAQ)
+را تولید می‌کند. تنها رابط محصول React/Vite در `frontend/` است؛ خروجی build از FastAPI روی `/` و `/workspace` سرو می‌شود.
 
 ## معماری فعلی
-Backend با FastAPI؛ draftها در SQLite؛ انتشار به مارکت‌پلیس از env؛ فرانت جدا با CORS:
+Backend با FastAPI؛ draftها در SQLite؛ انتشار سفارشی از env؛ فرانت production با same-origin و CORS در توسعه:
 
 ```
 backend/app/
-  main.py              # FastAPI + static RTL UI روی / + CORS برای Vite
+  main.py              # FastAPI + frontend/dist با fallback محدود SPA + CORS توسعه
   config.py             # مدل‌ها، DB، API keys، endpoint مارکت‌پلیس‌ها
   auth.py               # Bearer API key seller-scoped + rate limit
   storage.py            # SQLite drafts + feedback + seller_context
@@ -37,8 +36,9 @@ generate(+seller history) → create_draft → پاسخ. جزئیات: [[concept
 موتور به API سازگار با OpenAI وصل است (پیش‌فرض `gpt-4o-mini` / `whisper-1`). بدون
 `OPENAI_API_KEY` → `503`. Auth اختیاری است: اگر `CATALOGYAR_API_KEYS` خالی باشد seller=`development`.
 ویدئو، تاریخچه/ویرایش draft، خروجی انگلیسی، export/publish مارکت‌پلیس، اعتبارسنجی دسته،
-یادگیری از feedback، UI استاتیک فیلدهای کم‌اطمینان، و فرانت Vite (generate + edit mode)
-پیاده‌سازی شده‌اند. فرانت: [[entities/frontend-app]].
+یادگیری از feedback، ویرایش low-confidence، SEO/FAQ فارسی، نمایش شواهد مدل، چک‌لیست آمادگی، دانلود JSON عمومی و جست‌وجوی فارسی ۲۰ draft اخیر
+پیاده‌سازی شده‌اند. export رسمی بازارگاه نیست. فایل‌های ابزار محلی از tracking خارج شده‌اند؛ فایل duplicate دقیق در کد/مستندات پیدا نشد.
+۴۰ تست backend و syntax فرانت موفق‌اند؛ type-check/lint/build و تست بصری هنوز انجام نشده‌اند. فرانت: [[entities/frontend-app]].
 تنظیمات: [[concepts/engine-config]]. جزئیات موتور: `docs/engine-design.md`. API: `docs/api.md`.
 
 ## مستندات محصول

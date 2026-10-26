@@ -12,7 +12,7 @@ const toneClass: Record<NonNullable<StatusBannerProps["tone"]>, string> = {
 
 export function StatusBanner({ message, tone = "neutral" }: StatusBannerProps) {
   return (
-    <p className={`rounded-xl px-4 py-3 text-sm leading-7 ${toneClass[tone]}`} role="status">
+    <p className={`rounded-xl px-4 py-3 text-sm leading-7 ${toneClass[tone]}`} role={tone === "error" ? "alert" : "status"}>
       {message}
     </p>
   );

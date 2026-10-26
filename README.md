@@ -34,6 +34,7 @@ frontend/
 | `docs/engine-design.md` | موتور AI و checklist فیچر |
 | `docs/product-doc.md` | مسئله، بازار، نقشه راه |
 | `docs/mvp-design.md` | قرارداد JSON اولیه |
+| `docs/competitor-research.md` | مقایسهٔ رقبا، پنج قابلیت جدید و ممیزی فایل/UX با محدودیت‌های اعتبارسنجی |
 | `frontend/README.md` | اجرای UI مدرن |
 | `CLAUDE.md` | قوانین نگهداری ویکی |
 
@@ -44,7 +45,9 @@ frontend/
 اپ FastAPI به‌همراه رابط React/Vite آماده است. در production، FastAPI خروجی build‌شدهٔ `frontend/dist` را روی `/` سرو می‌کند.
 `POST /catalog/generate` عکس یا ویدئو، ویس اختیاری، توضیح فروشنده و دسته‌های مجاز را می‌گیرد و
 draft ساختاریافتهٔ فارسی/انگلیسی می‌سازد. draftها در SQLite ذخیره می‌شوند؛ history، detail،
-edit، export و publish برای digikala/basalam/torob در دسترس‌اند. برای جزئیات HTTP ببینید `docs/api.md`.
+edit، export و publish برای digikala/basalam/torob در دسترس‌اند. خروجی بازارگاهی JSON عمومی برای اتصال سفارشی است، نه آداپتر رسمی تأییدشده.
+بستهٔ SEO/FAQ قابل‌ویرایش، نمایش شواهد، چک‌لیست آمادگی، دانلود JSON ذخیره‌شده و جست‌وجوی فارسی ۲۰ پیش‌نویس اخیر در workspace در دسترس‌اند.
+برای جزئیات HTTP ببینید `docs/api.md`.
 
 ## اجرای محلی
 

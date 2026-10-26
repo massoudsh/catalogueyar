@@ -32,7 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.router.routes.extend(catalog_router.routes)
+app.include_router(catalog_router)
 
 
 @app.get("/health")
@@ -42,9 +42,8 @@ async def health() -> dict[str, str]:
 
 @app.get("/{path:path}", include_in_schema=False)
 async def frontend(path: str) -> FileResponse:
-    index_file = FRONTEND_DIST_DIR / "index.html"
-    if not index_file.is_file():
-        raise HTTPException(status_code=503, detail="Frontend assets are not built")
+    if path == "catalog" or path.startswith("catalog/"):
+        raise HTTPException(status_code=404, detail="Not found")
 
     requested_file = (FRONTEND_DIST_DIR / path).resolve()
     try:
@@ -54,4 +53,9 @@ async def frontend(path: str) -> FileResponse:
 
     if path and requested_file.is_file():
         return FileResponse(requested_file)
+    if path not in ("", "workspace"):
+        raise HTTPException(status_code=404, detail="Not found")
+    index_file = FRONTEND_DIST_DIR / "index.html"
+    if not index_file.is_file():
+        raise HTTPException(status_code=503, detail="Frontend assets are not built")
     return FileResponse(index_file)

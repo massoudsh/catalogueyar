@@ -1,6 +1,7 @@
 import json
 
 from openai import OpenAI, OpenAIError
+from pydantic import ValidationError
 
 from app.config import GENERATE_MODEL, OPENAI_API_KEY
 from app.pipeline.errors import EngineCallError, EngineNotConfiguredError
@@ -11,6 +12,7 @@ from app.schemas.catalog import (
     CatalogGenerateResponse,
     Category,
     EnglishCatalog,
+    FAQItem,
     SourceEvidence,
     Variant,
 )
@@ -20,8 +22,10 @@ _SYSTEM_PROMPT = (
     "فقط بر اساس شواهد داده‌شده بنویس و حدس بی‌پایه نزن. اگر دسته‌بندی مجاز داده شده، suggested باید دقیقاً یکی از همان‌ها باشد. "
     "اگر چند رنگ در شواهد وجود دارد، آن‌ها را در variants با type رنگ قرار بده. "
     "همچنین نسخه انگلیسی title و description و attributes را در english تولید کن. "
+    "short_description یک خلاصه کوتاه فارسی، seo_keywords کلمات مرتبط با شواهد و faqs پرسش‌وپاسخ فقط از اطلاعات قطعی باشند؛ اطلاعات نامعلوم را وارد پاسخ FAQ نکن. "
     "برای اطلاعات ناموجود سؤال را در missing_info_questions بگذار. فقط JSON برگردان:\n"
     '{"title":"", "category":{"suggested":"","confidence":0.0}, "description":"", '
+    '"short_description":"", "seo_keywords":[""], "faqs":[{"question":"","answer":""}], '
     '"attributes":[{"name":"","value":"","confidence":0.0}], '
     '"variants":[{"type":"","options":[""]}], "missing_info_questions":[""], '
     '"source_evidence":{"from_image":[""],"from_voice":[""],"from_text_on_package":[""]}, '
@@ -110,25 +114,33 @@ def generate_catalog(
         response = call_with_retry(call_model, operation="generate")
         raw = response.choices[0].message.content or "{}"
         data = json.loads(raw)
+        if not isinstance(data, dict):
+            raise TypeError("پاسخ مدل باید یک شیء JSON باشد")
     except (OpenAIError, json.JSONDecodeError, TypeError) as exc:
         raise EngineCallError(f"خطا در تولید کاتالوگ: {exc}") from exc
 
-    english = data.get("english")
-    category = enforce_category(
-        Category(**(data.get("category") or {"suggested": "", "confidence": 0.0})),
-        category_list,
-    )
-    return CatalogGenerateResponse(
-        title=data.get("title", ""),
-        category=category,
-        description=data.get("description", ""),
-        attributes=_attributes(data.get("attributes") or []),
-        variants=[Variant(**variant) for variant in data.get("variants") or []],
-        missing_info_questions=list(data.get("missing_info_questions") or []),
-        source_evidence=SourceEvidence(**(data.get("source_evidence") or {})),
-        english=EnglishCatalog(
-            title=english.get("title", ""),
-            description=english.get("description", ""),
-            attributes=_attributes(english.get("attributes") or []),
-        ) if english else None,
-    )
+    try:
+        english = data.get("english")
+        category = enforce_category(
+            Category(**(data.get("category") or {"suggested": "", "confidence": 0.0})),
+            category_list,
+        )
+        return CatalogGenerateResponse(
+            title=data.get("title", ""),
+            category=category,
+            description=data.get("description", ""),
+            short_description=data.get("short_description", ""),
+            seo_keywords=data.get("seo_keywords") or [],
+            faqs=[FAQItem(**item) for item in data.get("faqs") or []],
+            attributes=_attributes(data.get("attributes") or []),
+            variants=[Variant(**variant) for variant in data.get("variants") or []],
+            missing_info_questions=list(data.get("missing_info_questions") or []),
+            source_evidence=SourceEvidence(**(data.get("source_evidence") or {})),
+            english=EnglishCatalog(
+                title=english.get("title", ""),
+                description=english.get("description", ""),
+                attributes=_attributes(english.get("attributes") or []),
+            ) if english else None,
+        )
+    except (ValidationError, TypeError, AttributeError) as exc:
+        raise EngineCallError("ساختار پاسخ مدل برای کاتالوگ معتبر نیست") from exc

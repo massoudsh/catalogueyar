@@ -10,7 +10,7 @@
 5. **merge** — `merge_evidence(image_analysis, voice_transcript, seller_hint) -> MergedEvidence`
    در `backend/app/pipeline/merge.py`؛ بدون فراخوانی مدل.
 6. **generate** — [[entities/generate]] با `seller_context` + `recent_feedback` و
-   `enforce_category` روی لیست دستهٔ مجاز.
+   `enforce_category` روی لیست دستهٔ مجاز؛ محتوای `short_description/seo_keywords/faqs` با اعتبارسنجی ساختار پاسخ.
 7. **store** — [[entities/storage]] `create_draft`؛ پاسخ `CatalogGenerateResponse` به‌همراه
    `draft_id` برای ویرایش UI روی فیلدهای کم‌اطمینان.
 
@@ -24,8 +24,8 @@
 ورودی نامعتبر → `400`؛ draft گم → `404`؛ rate limit → `429`.
 
 ## آزمون‌پذیری
-`backend/tests/test_pipeline.py` با mock OpenAI قرارداد vision/speech/generate، ادغام شواهد،
-storage و مسیرهای خطا را می‌سنجد.
+`backend/tests/test_pipeline.py` با mock مدل و TestClient در ۴۰ تست قرارداد vision/speech/generate، ادغام شواهد،
+storage، SEO/FAQ، export، جداسازی seller و مسیرهای asset/SPA/API را می‌سنجد؛ آزمون بصری یا فراخوانی واقعی مدل نیست.
 
 ## منابع کد
 - `backend/app/api/catalog.py` — orchestration
