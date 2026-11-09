@@ -1,0 +1,21 @@
+services:
+  catalogyar:
+    build:
+      context: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - backend/.env
+    environment:
+      CATALOGYAR_DATA_DIR: /data
+      CATALOGYAR_DATABASE_PATH: /data/catalogyar.sqlite3
+      CATALOGYAR_IMAGE_CACHE_DIR: /data/vision-cache
+    volumes:
+      - catalogyar-data:/data
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  catalogyar-data:

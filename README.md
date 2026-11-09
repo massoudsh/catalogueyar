@@ -49,6 +49,26 @@ edit، export و publish برای digikala/basalam/torob در دسترس‌ان�
 بستهٔ SEO/FAQ قابل‌ویرایش، نمایش شواهد، چک‌لیست آمادگی، دانلود JSON ذخیره‌شده و جست‌وجوی فارسی ۲۰ پیش‌نویس اخیر در workspace در دسترس‌اند.
 برای جزئیات HTTP ببینید `docs/api.md`.
 
+## اجرا با Docker
+
+نیازمند Docker Engine و Compose v2 روی سرور:
+
+```bash
+cp backend/.env.example backend/.env
+# تنظیمات موتور و کلیدهای احراز هویت فروشنده را در backend/.env وارد کنید.
+docker compose up -d --build
+```
+
+- Dockerfile چندمرحله‌ای با Node.js 22 فرانت را build می‌کند؛ image نهایی Python 3.12، FastAPI، خروجی Vite و ffmpeg دارد و با کاربر غیر-root اجرا می‌شود.
+- Compose فقط پورت `127.0.0.1:8000` سرور را باز می‌کند؛ reverse proxy همان سرور باید HTTPS را terminate و درخواست‌ها را به این پورت هدایت کند.
+- رابط `/` و `/workspace` و API از یک origin سرو می‌شوند. متغیرهای `VITE_*` در runtime اعمال نمی‌شوند؛ هیچ کلید فروشنده‌ای در build فرانت قرار نمی‌گیرد. image پیش‌فرض هدر Bearer نمی‌فرستد؛ برای API محافظت‌شده، احراز هویت سمت سرور در reverse proxy یا مدیریت session لازم است. کلید فروشنده را در باندل عمومی قرار ندهید.
+- `backend/.env` فقط در runtime وارد کانتینر می‌شود؛ `.dockerignore` فایل‌های env، ابزار محلی، attachmentها و خروجی‌های build محلی را از context خارج می‌کند.
+- volume نام‌دار `catalogyar-data`، SQLite و cache را در `/data` نگه می‌دارد. Compose مسیرهای داده را صریحاً override می‌کند؛ تنظیمات دیگر از env می‌آیند. `docker compose down` داده را نگه می‌دارد؛ `down -v` آن را حذف می‌کند.
+- healthcheck مسیر `/health` را بررسی می‌کند؛ دسترسی موتور یا سلامت build فرانت را تضمین نمی‌کند. فقط یک worker استفاده می‌شود چون rate limit فعلی درون‌پردازشی است.
+- داده‌های قدیمی مسیر host خودکار منتقل نمی‌شوند؛ پیش از استقرار، از SQLite نسخهٔ پشتیبان بگیرید و انتقال به volume را جداگانه انجام دهید.
+
+بیلد و smoke test واقعی image باید روی سرور انجام شود؛ در محیط فعلی Docker build اجرا نشده است.
+
 ## اجرای محلی
 
 ### بک‌اند

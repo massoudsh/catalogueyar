@@ -11,3 +11,4 @@
 ## [2026-10-03] update | باقی‌مانده‌های محصول: `enforce_category`، `recent_feedback` در پرامپت generate، UI هایلایت/ویرایش low-confidence + `draft_id`، شمارندهٔ مشترک cache روی دیسک؛ docs/wiki sync.
 ## [2026-10-03] update | فرانت Vite+React+Tailwind در `frontend/` (لندینگ `/` + workspace generate/edit/history)؛ CORS با `CATALOGYAR_CORS_ORIGINS` در `main.py`؛ صفحهٔ [[entities/frontend-app]] و README همگام.
 ## [2026-10-26] update | ممیزی رقبا/فایل/UX؛ پنج قابلیت SEO/FAQ، شواهد، آمادگی، دانلود JSON و جست‌وجوی فارسی؛ حذف ابزار tracking‌شده و مدل‌های بلااستفاده، رفع PATCH/router/SPA؛ ۴۰ تست backend و syntax فرانت موفق، type-check/lint/build/تست بصری انجام نشده‌اند.
+## [2026-11-09] update | Dockerfile چندمرحله‌ای، compose production، ffmpeg، non-root، healthcheck و volume SQLite/cache اضافه شد؛ Docker build و smoke test به سرور نیاز دارد.
